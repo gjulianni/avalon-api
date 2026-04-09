@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build (Front e Back)
+dist/
+build/
+
+# DB e sessões
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+prisma/dev.db
+prisma/sessions.sqlite
+dev.db
+
+# Variáveis de Ambiente 
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs e Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# Sistema
+.DS_Store
+Thumbs.db
