@@ -1,11 +1,12 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
-    "start": "npx prisma migrate deploy && node dist/index.js"
-  },
+"scripts": {
+  "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+  "build": "tsc",
+  "postinstall": "npx prisma generate",
+  "start": "npx prisma migrate deploy && node dist/index.js"
+},
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
     "@prisma/client": "^6.19.3",
