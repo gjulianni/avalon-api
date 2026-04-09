@@ -25,9 +25,11 @@ app.set('trust proxy', 1);
 
 // ── Middlewares ──────────────────────────────────────────────────────────────
 
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL as string,
+    origin: (process.env.FRONTEND_URL as string).replace(/\/$/, ""),
     credentials: true,
   })
 );
