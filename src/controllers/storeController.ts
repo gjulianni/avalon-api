@@ -229,7 +229,8 @@ export const checkout = async (
     const raw: any = await response.json();
 
     if (!response.ok) {
-      res.status(response.status).json({ error: raw.message || 'Erro na API' });
+      console.error("ERRO CENTRALCART:", JSON.stringify(raw, null, 2));
+      res.status(response.status).json({ error: raw.message || 'Erro de validação na API da loja.' });
       return;
     }
 
