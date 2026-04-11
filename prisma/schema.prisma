@@ -78,4 +78,5 @@ model PlayerGlove {
   ctGroup   Int      @default(0)
   ctGlove   Int      @default(0)
   ctFloat   Float    @default(0.0)
+  updatedAt DateTime @updatedAt
 }
