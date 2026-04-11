@@ -4,7 +4,8 @@ import session from 'express-session';
 import passport from 'passport';
 import dotenv from 'dotenv';
 import dns from 'dns';
-import SQLiteStoreFactory from 'connect-sqlite3';
+import pg from 'pg';
+import pgSession from 'connect-pg-simple';
 
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 dns.setDefaultResultOrder('ipv4first');
@@ -16,11 +17,19 @@ import { updateServerInfo } from './configs/serverCache';
 import authRoutes from './routes/authRoutes';
 import storeRoutes from './routes/storeRoutes';
 import serverRoutes from './routes/serverRoutes';
+import skinsRouter from './routes/skinsRoutes';
 import webhookController from './controllers/webhookController';
+
+import { startCronJobs } from './jobs/vipStatus';
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SQLiteStore = SQLiteStoreFactory(session);
+const pgPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const PostgresStore = pgSession(session);
 app.set('trust proxy', 1);
 
 // ── Middlewares ──────────────────────────────────────────────────────────────
@@ -44,10 +53,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(
   session({
-    store: new SQLiteStore({
-      db: 'sessions.sqlite', 
-      dir: './prisma'        
-    }) as any, 
+    store: new PostgresStore({
+      pool: pgPool,
+      tableName: 'session',
+    }),
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
@@ -73,6 +82,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/server-info', serverRoutes);
 app.use('/api/webhooks', webhookController);
+app.use('/api/skins', skinsRouter);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 
@@ -80,5 +90,6 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 
   updateServerInfo();
+  startCronJobs();
   setInterval(updateServerInfo, 30_000);
 });

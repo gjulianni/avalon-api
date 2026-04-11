@@ -1,16 +1,16 @@
 import crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma }from '../database';
+import { processApprovedOrder } from '../helpers/processApprovedOrder';
 
 const router = express.Router();
 
 console.log("DATABASE_URL atual:", process.env.DATABASE_URL);
 
-const commandMap: Record<number, (clientId: string, days: number) => string> = {
-  499832: (clientId, days) => `sm_addvip "${clientId}" vip1 ${days}`,
-  499833: (clientId, days) => `sm_addvip "${clientId}" vip2 ${days}`, 
+export const vipGroupMap: Record<number, string> = {
+  499832: 'vip1',
+  499833: 'vip2',
 };
-
 function verifyWebhook(req: any, signature: string, timestamp: string, secret: string): boolean {
   const rawBody = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
   
@@ -41,54 +41,29 @@ router.post('/centralcart', async (req: Request, res: Response): Promise<void> =
     return;
   }
 
-  const { event, data } = req.body;
+ const { event, data } = req.body;
   console.log('--- [DEBUG] Verificando Evento:', event);
 
+  const orderId = String(data?.internal_id || data?.order_id || data?.id);
+
   if (event === 'ORDER_APPROVED') {
-    const clientId = data.client_identifier; 
-  
-    if (clientId && data.packages) { 
-      for (const item of data.packages) {
-        const pkgId = Number(item.package_id);
-        const buildCommand = commandMap[pkgId];
-        
-        if (buildCommand) {
-          const days = item.quantity * 30;
-          const command = buildCommand(clientId, days);
-          
-          try {
-            console.log('--- [DEBUG] Tentando salvar no SQLite...');
-            const result = await prisma.pendingCommand.create({
-              data: {
-                command: command,
-                executed: false
-              }
-            });
-            console.log('[SUCESSO] Salvo no banco com ID:', result.id);
-          } catch (error) {
-            console.error('[ERRO PRISMA]:', error);
-          }
-        } else {
-          console.warn(' [AVISO] O ID', pkgId, 'não existe no seu commandMap!');
-          console.log('IDs disponíveis no seu mapa:', Object.keys(commandMap));
-        }
-      }
-    } else {
-      console.log('--- [DEBUG] Falha: clientId ou packages ausentes no data');
+    try {
+      await processApprovedOrder(orderId, data);
+      console.log(`[WEBHOOK SUCESSO] VIP processado pelo Helper para o pedido ${orderId}`);
+    } catch (error) {
+      console.error('[WEBHOOK ERRO] Falha ao processar helper:', error);
     }
   } else {
-    console.log('--- [DEBUG] Evento ignorado (não é ORDER_APPROVED)');
+    console.log(`--- [DEBUG] Evento diferente de aprovado recebido: ${event}`);
   }
-
-  const orderId = data?.internal_id || data?.order_id || data?.id;
 
   if (orderId && data?.status) {
     try {
       await prisma.order.upsert({
-        where: { id: String(orderId) },
+        where: { id: orderId },
         update: { status: data.status },
         create: {
-          id: String(orderId),
+          id: orderId,
           status: data.status,
           userId: data.client_identifier ?? '',
         }

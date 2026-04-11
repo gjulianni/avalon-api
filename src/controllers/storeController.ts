@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CheckoutRequestBody } from '../types';
 import { prisma }from '../database';
+import { processApprovedOrder } from '../helpers/processApprovedOrder';
 
 
 const CC_API = 'https://api.centralcart.com.br/v1';
@@ -62,10 +63,16 @@ export const getPendingOrder = async (req: Request, res: Response) => {
 
         const finalStatuses = ['APPROVED', 'CANCELED', 'ABANDONED', 'REJECTED', 'CHARGEDBACK', 'REFUNDED'];
         if (remoteOrder && finalStatuses.includes(remoteOrder.status)) {
-          order = await prisma.order.update({
-            where: { id: order.id },
-            data: { status: remoteOrder.status }
-          });
+          
+          if (remoteOrder.status === 'APPROVED') {
+            await processApprovedOrder(order.id, remoteOrder);
+          } else {
+            await prisma.order.update({
+              where: { id: order.id },
+              data: { status: remoteOrder.status }
+            });
+          }
+          
           return res.json({ order: null });
         }
       }
@@ -142,24 +149,29 @@ export const getOrderStatus = async (req: Request, res: Response) => {
 
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
- if (order.status === 'PENDING') {
-  try {
-    const response = await fetch(`${CC_API}/app/order/${id}`, {
-      method: 'GET',
-      headers: {
-        ...webstoreHeaders(), 
-        'Authorization': `Bearer ${process.env.CENTRALCART_API_TOKEN}`,
-      },
-    });
+  if (order.status === 'PENDING') {
+    try {
+      const response = await fetch(`${CC_API}/app/order/${id}`, {
+        method: 'GET',
+        headers: {
+          ...webstoreHeaders(),
+          'Authorization': `Bearer ${process.env.CENTRALCART_API_TOKEN}`,
+        },
+      });
       const remoteOrder: any = await response.json();
 
       if (remoteOrder && remoteOrder.status) {
         const finalStatuses = ['APPROVED', 'CANCELED', 'ABANDONED', 'REJECTED', 'CHARGEDBACK', 'REFUNDED'];
         if (finalStatuses.includes(remoteOrder.status)) {
-          order = await prisma.order.update({
-            where: { id },
-            data: { status: remoteOrder.status }
-          });
+          if (remoteOrder.status === 'APPROVED') {
+            await processApprovedOrder(id, remoteOrder);
+          } else {
+            await prisma.order.update({
+              where: { id },
+              data: { status: remoteOrder.status }
+            });
+          }
+
         }
       }
     } catch (err) {
@@ -224,6 +236,7 @@ export const checkout = async (
     const finalUrl = raw.checkout_url || raw.return_url;
 
     if (raw.order_id) {
+      const initialStatus = raw.status || 'PENDING';
       await prisma.order.upsert({
         where: { id: raw.order_id },
         update: {},
@@ -237,6 +250,25 @@ export const checkout = async (
           userId: steamIdString,
         },
       });
+
+      if (initialStatus === 'APPROVED') {
+        try {
+          const ccResponse = await fetch(`${CC_API}/app/order/${raw.order_id}`, {
+            method: 'GET',
+            headers: {
+              ...webstoreHeaders(),
+              'Authorization': `Bearer ${process.env.CENTRALCART_API_TOKEN}`,
+            },
+          });
+          
+          if (ccResponse.ok) {
+            const fullRemoteOrder: any = await ccResponse.json();
+            await processApprovedOrder(raw.order_id, fullRemoteOrder);
+          }
+        } catch (err) {
+          console.error("Erro ao processar aprovação instantânea no checkout:", err);
+        }
+      }
     }
 
     res.json({
@@ -255,22 +287,58 @@ export const checkout = async (
 export const syncCommands = async (req: Request, res: Response) => {
   const commands = await prisma.pendingCommand.findMany({ where: { executed: false } });
 
-  if (commands.length === 0) return res.send("");
+  const toAdd = await prisma.vipOrder.findMany({
+    where: { status: "ACTIVE", notifiedAdd: false }
+  });
+
+  const toRemove = await prisma.vipOrder.findMany({
+    where: { status: "EXPIRED", notifiedDel: false }
+  });
+
+  if (commands.length === 0 && toAdd.length === 0 && toRemove.length === 0) {
+    return res.send("");
+  }
   
-  await prisma.pendingCommand.updateMany({
-    where: { id: { in: commands.map(c => c.id) } },
-    data: { executed: true }
+const finalCommandsList: string[] = [];
+
+  commands.forEach(c => finalCommandsList.push(c.command));
+
+toAdd.forEach(order => {
+    finalCommandsList.push(`sm_addvip "${order.steamId}" ${order.vipGroup} ${order.durationDays}`);
   });
   
-const plainTextCommands = commands.map(c => c.command).join(";"); 
-const responseBody = plainTextCommands.trim();
+  toRemove.forEach(order => {
+    finalCommandsList.push(`sm_delvip "${order.steamId}"`);
+  });
 
-console.log(`Enviando para o servidor: "${responseBody}"`);
+  if (commands.length > 0) {
+    await prisma.pendingCommand.updateMany({
+      where: { id: { in: commands.map(c => c.id) } },
+      data: { executed: true }
+    });
+  }
 
-res.set({
-  'Content-Type': 'text/plain; charset=utf-8',
-  'Content-Length': Buffer.byteLength(responseBody),
-});
+  if (toAdd.length > 0) {
+    await prisma.vipOrder.updateMany({
+      where: { id: { in: toAdd.map(o => o.id) } },
+      data: { notifiedAdd: true }
+    });
+  }
 
-res.status(200).send(responseBody);
+  if (toRemove.length > 0) {
+    await prisma.vipOrder.updateMany({
+      where: { id: { in: toRemove.map(o => o.id) } },
+      data: { notifiedDel: true }
+    });
+  }
+  const responseBody = finalCommandsList.join(";").trim();
+
+  console.log(`Enviando para o servidor: "${responseBody}"`);
+
+  res.set({
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Content-Length': Buffer.byteLength(responseBody).toString(),
+  });
+
+  res.status(200).send(responseBody);
 };

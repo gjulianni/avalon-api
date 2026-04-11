@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -24,4 +24,58 @@ model Order {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   userId      String   
+}
+
+model VipOrder {
+  id                String   @id @default(uuid())
+  steamId           String
+  status            String   @default("PENDING")
+  durationDays      Int      @default(30) 
+  vipGroup          String   @default("vip1")
+  expiresAt         DateTime
+  notifiedAdd       Boolean  @default(false)
+  notifiedDel       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([steamId])
+}
+
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+  @@map("session") 
+}
+
+model PlayerWeaponSkin {
+  id              String   @id @default(uuid())
+  steamId         String   
+  weaponName      String   
+
+  // propriedades de arma 
+  paintKit        Int      @default(0)   // skin id 
+  wearFloat       Float    @default(0.0) // desgaste
+  statTrak        Boolean  @default(false)
+  statTrakCount   Int      @default(0)
+  nameTag         String   @default("")
+  seed            Int      @default(-1)  // Pattern
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  @@index([steamId])
+  @@unique([steamId, weaponName]) 
+}
+
+model PlayerGlove {
+  steamId   String   @id
+  
+  tGroup    Int      @default(0)
+  tGlove    Int      @default(0)
+  tFloat    Float    @default(0.0)
+  
+  ctGroup   Int      @default(0)
+  ctGlove   Int      @default(0)
+  ctFloat   Float    @default(0.0)
 }
