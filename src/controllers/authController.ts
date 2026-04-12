@@ -45,14 +45,23 @@ export const logout = (req: Request, res: Response): void => {
 };
 
 export const steamReturn = (req: Request, res: Response): void => {
-   const token = crypto.randomUUID();
-   
-    pendingTokens.set(token, {
-    sessionId: req.sessionID,
-    expiresAt: Date.now() + 5 * 60 * 1000,
-  });
+  req.session.save((err) => {
+    if (err) {
+      console.error('Erro ao salvar sessão:', err);
+      res.redirect(`${process.env.FRONTEND_URL}?error=auth_failed`);
+      return;
+    }
 
-  res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+    const token = crypto.randomUUID();
+    
+    pendingTokens.set(token, {
+      sessionId: req.sessionID,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
+
+    console.log('SessionID salvo no banco:', req.sessionID);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+  });
 };
 
 export const exchangeToken = (req: Request, res: Response): void => {

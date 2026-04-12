@@ -73,7 +73,7 @@ app.use(
     }),
     secret: process.env.SESSION_SECRET as string,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     cookie: { 
       secure: isProduction, 
       sameSite: isProduction ? 'none' : 'lax', 
