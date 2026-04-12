@@ -4,7 +4,7 @@ import { equipWeaponSkin, getPlayerInventory, syncPlayerSkins } from "../control
 const skinsRouter = Router();
 
 skinsRouter.post('/equip', equipWeaponSkin);
-skinsRouter.post('/sync', syncPlayerSkins);
+skinsRouter.get('/sync/:steamId', syncPlayerSkins);
 skinsRouter.get('/inventory', getPlayerInventory);
 
 export default skinsRouter;

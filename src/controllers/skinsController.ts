@@ -79,17 +79,35 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
 
 
 export const syncPlayerSkins = async (req: Request, res: Response) => {
-  const { steamIds } = req.body;
+  const { steamId } = req.params; 
 
-  const idsArray = Array.isArray(steamIds) ? steamIds : [steamIds];
+  if (!steamId) {
+    return res.status(400).json({ success: false, error: 'SteamID ausente' });
+  }
 
   try {
+
+    const parts = steamId.split(':'); 
+    
+    if (parts.length !== 3 || !parts[0].startsWith('STEAM_')) {
+      return res.status(400).json({ success: false, error: 'Formato de SteamID inválido' });
+    }
+
+    const y = parts[1]; 
+    const z = parts[2]; 
+
+    const possibleSteamIds = [
+      `STEAM_0:${y}:${z}`,
+      `STEAM_1:${y}:${z}`
+    ];
     const allSkins = await prisma.playerWeaponSkin.findMany({
-  where: { steamId: { in: idsArray } },
-  orderBy: {
-    updatedAt: 'asc', 
-  },
-});
+     where: { 
+        steamId: { in: possibleSteamIds } 
+      },
+      orderBy: {
+        updatedAt: 'asc', 
+      },
+    });
 
     const mappedSkins = allSkins.map(skin => {
       return {
@@ -103,12 +121,14 @@ export const syncPlayerSkins = async (req: Request, res: Response) => {
           : 0
       };
     });
+
     const skinsOnly = mappedSkins.filter(s => !s.weaponName.startsWith('knife') && s.weaponName !== 'bayonet');
-const lastKnife = mappedSkins.filter(s => s.weaponName.startsWith('knife') || s.weaponName === 'bayonet').pop();
-const finalSkins = lastKnife ? [...skinsOnly, lastKnife] : skinsOnly;
+    const lastKnife = mappedSkins.filter(s => s.weaponName.startsWith('knife') || s.weaponName === 'bayonet').pop();
+    const finalSkins = lastKnife ? [...skinsOnly, lastKnife] : skinsOnly;
 
     return res.status(200).json({ success: true, skins: finalSkins, gloves: [] });
   } catch (error) {
+    console.error("Erro no sync individual:", error);
     return res.status(500).json({ success: false });
   }
 };
