@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import dns from 'dns';
 import pg from 'pg';
 import pgSession from 'connect-pg-simple';
+import type {} from './types/session';
 
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 dns.setDefaultResultOrder('ipv4first');
@@ -24,7 +25,7 @@ import { startCronJobs } from './jobs/vipStatus';
 
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const pgPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -34,14 +35,23 @@ app.set('trust proxy', 1);
 
 // ── Middlewares ──────────────────────────────────────────────────────────────
 
-console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = [
+            `${process.env.FRONTEND_URL}` as string,
+        ];
 
-app.use(
-  cors({
-    origin: (process.env.FRONTEND_URL as string).replace(/\/$/, ""),
-    credentials: true,
-  })
-);
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido por CORS'));
+        }
+    },
+    credentials: true
+}));
+
 
 app.use(express.json({
   verify: (req: any, res, buf) => {
@@ -72,6 +82,32 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req, _res, next) => {
+  if (req.isAuthenticated()) return next();
+
+  const authHeader = req.headers['authorization'];
+  if (!authHeader?.startsWith('Bearer ')) return next();
+
+  const sessionId = authHeader.slice(7);
+
+  req.sessionStore.get(sessionId, (err, sessionData) => {
+    if (err || !sessionData) return next();
+
+    req.session.id = sessionId;
+    Object.assign(req.session, sessionData);
+
+    if (sessionData.passport?.user) {
+      req.user = sessionData.passport.user;
+      // faz o isAuthenticated() funcionar
+      (req as any)._passport = { instance: (req as any)._passport?.instance };
+      req.session.passport = sessionData.passport;
+    }
+
+    next();
+  });
+});
+
+
 // ── Passport Config ──────────────────────────────────────────────────────────
 
 configurePassport();
@@ -86,7 +122,7 @@ app.use('/api/skins', skinsRouter);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 
   updateServerInfo();

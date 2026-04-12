@@ -1,6 +1,15 @@
 import { Request, Response } from 'express';
 import { SteamUser } from '../types';
 
+const pendingTokens = new Map<string, { sessionId: string; expiresAt: number }>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of pendingTokens.entries()) {
+    if (now > entry.expiresAt) pendingTokens.delete(token);
+  }
+}, 60 * 1000);
+
 export const getUser = (req: Request, res: Response): void => {
   if (req.isAuthenticated()) {
     const user = req.user as SteamUser;
@@ -35,6 +44,33 @@ export const logout = (req: Request, res: Response): void => {
   });
 };
 
-export const steamReturn = (_req: Request, res: Response): void => {
-  res.redirect(`${process.env.FRONTEND_URL}`);
+export const steamReturn = (req: Request, res: Response): void => {
+   const token = crypto.randomUUID();
+   
+    pendingTokens.set(token, {
+    sessionId: req.sessionID,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
+
+  res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+};
+
+export const exchangeToken = (req: Request, res: Response): void => {
+  const { token } = req.body;
+
+  if (!token || typeof token !== 'string') {
+    res.status(400).json({ error: 'Token inválido' });
+    return;
+  }
+
+  const entry = pendingTokens.get(token);
+
+  if (!entry || Date.now() > entry.expiresAt) {
+    pendingTokens.delete(token);
+    res.status(401).json({ error: 'Token expirado ou inválido' });
+    return;
+  }
+
+  pendingTokens.delete(token); 
+  res.json({ sessionId: entry.sessionId });
 };
