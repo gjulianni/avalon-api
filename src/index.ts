@@ -87,15 +87,23 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use((req, _res, next) => {
-  if (req.isAuthenticated()) return next();
+   if (req.isAuthenticated()) {
+    console.log('Autenticado via cookie');
+    return next();
+  }
 
   const authHeader = req.headers['authorization'];
   if (!authHeader?.startsWith('Bearer ')) return next();
 
   const sessionId = authHeader.slice(7);
+  console.log('Tentando autenticar via header, sessionId:', sessionId);
+
 
   req.sessionStore.get(sessionId, (err, sessionData) => {
-    if (err || !sessionData) return next();
+   
+       console.log('sessionStore.get erro:', err);
+    console.log('sessionStore.get data:', sessionData);
+     if (err || !sessionData) return next();
 
     req.session.id = sessionId;
     Object.assign(req.session, sessionData);
