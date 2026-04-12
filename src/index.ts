@@ -53,7 +53,8 @@ console.log('Allowed:', allowedOrigins);
             callback(new Error('Não permitido por CORS'));
         }
     },
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 
@@ -87,7 +88,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use((req, _res, next) => {
-   if (req.isAuthenticated()) {
+  if (req.isAuthenticated()) {
     console.log('Autenticado via cookie');
     return next();
   }
@@ -98,21 +99,17 @@ app.use((req, _res, next) => {
   const sessionId = authHeader.slice(7);
   console.log('Tentando autenticar via header, sessionId:', sessionId);
 
-
   req.sessionStore.get(sessionId, (err, sessionData) => {
-   
-       console.log('sessionStore.get erro:', err);
-    console.log('sessionStore.get data:', sessionData);
-     if (err || !sessionData) return next();
+    if (err || !sessionData) return next();
 
+    req.sessionID = sessionId;
     req.session.id = sessionId;
     Object.assign(req.session, sessionData);
 
     if (sessionData.passport?.user) {
       req.user = sessionData.passport.user;
-      // faz o isAuthenticated() funcionar
-      (req as any)._passport = { instance: (req as any)._passport?.instance };
-      req.session.passport = sessionData.passport;
+      
+      (req as any).isAuthenticated = () => true;
     }
 
     next();

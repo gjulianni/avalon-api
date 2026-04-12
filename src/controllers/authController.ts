@@ -11,7 +11,12 @@ setInterval(() => {
 }, 60 * 1000);
 
 export const getUser = (req: Request, res: Response): void => {
-  if (req.isAuthenticated()) {
+
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  if (req.isAuthenticated() || req.user) {
     const user = req.user as SteamUser;
     res.json({
       loggedIn: true,
