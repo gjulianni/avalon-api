@@ -32,20 +32,28 @@ export const getUser = (req: Request, res: Response): void => {
 };
 
 export const logout = (req: Request, res: Response): void => {
+  const authHeader = req.headers['authorization'];
+  const bearerId = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
   req.logout((err) => {
     if (err) {
-      res.status(500).json({ error: 'Failed to logout' });
+      res.status(500).json({ error: 'Failed to logout passport' });
       return;
     }
 
-    req.session.destroy((err) => {
+    const finishLogout = (err?: any) => {
       if (err) {
         res.status(500).json({ error: 'Failed to destroy session' });
         return;
       }
       res.clearCookie('connect.sid');
       res.json({ success: true, message: 'Logged out successfully' });
-    });
+    };
+    if (bearerId) {
+      req.sessionStore.destroy(bearerId, finishLogout);
+    } else {
+      req.session.destroy(finishLogout);
+    }
   });
 };
 

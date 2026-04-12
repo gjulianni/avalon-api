@@ -100,15 +100,16 @@ app.use((req, _res, next) => {
   console.log('Tentando autenticar via header, sessionId:', sessionId);
 
   req.sessionStore.get(sessionId, (err, sessionData) => {
-    if (err || !sessionData) return next();
-
-    req.sessionID = sessionId;
-    req.session.id = sessionId;
-    Object.assign(req.session, sessionData);
-
+    if (err) {
+      console.log('Erro no sessionStore:', err);
+      return next();
+    }
+    if (!sessionData) {
+      console.log('Sessão não encontrada no DB para ID:', sessionId);
+      return next();
+    }
     if (sessionData.passport?.user) {
       req.user = sessionData.passport.user;
-      
       (req as any).isAuthenticated = () => true;
     }
 
