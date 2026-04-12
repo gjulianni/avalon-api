@@ -39,9 +39,13 @@ app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
         
+  
+
         const allowedOrigins = [
             `${process.env.FRONTEND_URL}` as string,
         ];
+              console.log('Origin recebida:', origin);
+console.log('Allowed:', allowedOrigins);
 
         if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
             callback(null, true);
