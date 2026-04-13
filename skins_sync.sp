@@ -3,11 +3,19 @@
 #include <cstrike>
 #include <ripext>
 
-#define API_BASE_URL "https://api.com"
+#define API_BASE_URL "https://avalon-api-px5p.onrender.com"
 #define API_PATH "api/skins/sync"
 
 Database g_dbSkins;
 HTTPClient g_httpClient;
+
+public Plugin myinfo = 
+{
+	name = "AVALON Skin Sync",
+	author = "nanno",
+	description = "Sincronização de skins via Web API",
+	version = "1.0.0"
+};
 
 native void Weapons_ReloadPlayerData(int client);
 
@@ -22,46 +30,39 @@ public void OnPluginStart() {
 }
 
 public Action Command_Sync(int client, int args) {
-    if (client == 0) return Plugin_Handled;
-    PrintToChat(client, " \x0B[AVALON]\x01 Sincronizando... Verifique o console do server se falhar.");
-    IniciarSincronizacao();
+    if (client == 0 || !IsClientInGame(client)) return Plugin_Handled;
+    char steamId[64];
+    if (!GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId))) {
+        PrintToChat(client, " \x0B[AVALON]\x01 Erro ao obter seu SteamID.");
+        return Plugin_Handled;
+    }
+
+    PrintToChat(client, " \x0B[AVALON]\x01 Sincronizando suas skins...");
+
+    char url[256];
+    Format(url, sizeof(url), "%s/%s", API_PATH, steamId);
+    g_httpClient.Get(url, OnSyncResponse, GetClientUserId(client));
+
     return Plugin_Handled;
 }
 
-void IniciarSincronizacao() {
-    JSONArray steamIdsArray = new JSONArray();
-    for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && !IsFakeClient(i)) {
-            char steamId[64];
-            GetClientAuthId(i, AuthId_Steam2, steamId, sizeof(steamId));
-            steamIdsArray.PushString(steamId);
-        }
-    }
-    
-    JSONObject payload = new JSONObject();
-    payload.Set("steamIds", steamIdsArray);
-    g_httpClient.Post(API_PATH, payload, OnSyncResponse);
-    
-    delete payload;
-    delete steamIdsArray;
-}
+public void OnSyncResponse(HTTPResponse response, any userid) {
+    int client = GetClientOfUserId(userid);
+    if (client == 0 || !IsClientInGame(client)) return;
 
-public void OnSyncResponse(HTTPResponse response, any value) {
     if (response.Status != HTTPStatus_OK) {
-        PrintToServer("[Avalon-Erro] API respondeu com Status %d.", response.Status);
+        PrintToChat(client, " \x0B[AVALON]\x01 Falha ao contatar a API. Tente novamente.");
         return;
     }
 
     JSONObject jsonResponse = view_as<JSONObject>(response.Data);
     if (jsonResponse == null || !jsonResponse.GetBool("success")) {
-        PrintToServer("[Avalon-Erro] JSON invalido ou success = false");
+        PrintToChat(client, " \x0B[AVALON]\x01 Nenhuma skin encontrada no banco de dados.");
         return;
     }
 
     JSONArray skins = view_as<JSONArray>(jsonResponse.Get("skins"));
     if (skins == null) return;
-
-    PrintToServer("[Avalon] Processando %d skins recebidas...", skins.Length);
 
     for (int i = 0; i < skins.Length; i++) {
         JSONObject s = view_as<JSONObject>(skins.Get(i));
@@ -71,62 +72,60 @@ public void OnSyncResponse(HTTPResponse response, any value) {
         s.GetString("weaponName", weapon, sizeof(weapon));
         strcopy(accountId, sizeof(accountId), steamId[10]);
 
-   
         Format(query, sizeof(query), "UPDATE ws_weapons SET %s = %d, %s_float = %.2f, %s_seed = %d WHERE steamid LIKE '%%%s'", 
             weapon, s.GetInt("paintKit"), weapon, s.GetFloat("wearFloat"), weapon, s.GetInt("seed"), accountId);
-        g_dbSkins.Query(SQL_ConfirmarUpdate, query);
+        if (!SQL_FastQuery(g_dbSkins, query)) {
+            PrintToServer("[Skins Sync] Erro ao atualizar skin da arma %s", weapon);
+        }
         
-    
         int modelId = s.GetInt("knifeModelId");
         if (modelId > 0) {
             Format(query, sizeof(query), "UPDATE ws_weapons SET knife = %d WHERE steamid LIKE '%%%s'", modelId, accountId);
-            g_dbSkins.Query(SQL_ConfirmarUpdate, query);
+            SQL_FastQuery(g_dbSkins, query);
         }
 
         delete s;
     }
     delete skins;
     
-    CreateTimer(0.2, Timer_TriggerReload, _);
+    Weapons_ReloadPlayerData(client);
+    CreateTimer(0.6, Timer_RefreshReal, userid);
+    
+    PrintToChat(client, " \x0B[AVALON]\x01 Sincronização concluída com sucesso!");
 }
-
 
 public Action Timer_RefreshReal(Handle timer, any userid) {
     int client = GetClientOfUserId(userid);
     
     if (client > 0 && IsClientInGame(client) && IsPlayerAlive(client)) {
-        
         for (int slot = 0; slot < 3; slot++) { 
-    int weapon = GetPlayerWeaponSlot(client, slot);
-    if (weapon > 0 && IsValidEntity(weapon)) {
-        char classname[64];
-        GetEntityClassname(weapon, classname, sizeof(classname));
+            int weapon = GetPlayerWeaponSlot(client, slot);
+            if (weapon > 0 && IsValidEntity(weapon)) {
+                char classname[64];
+                GetEntityClassname(weapon, classname, sizeof(classname));
 
-        if (slot == 2) {
-            // Remove e "mata" a faca atual de vez
-            RemovePlayerItem(client, weapon);
-            AcceptEntityInput(weapon, "Kill");
-            
-            // Pequeno delay apenas para a faca, para garantir que o slot limpou
-            DataPack pack;
-            CreateDataTimer(0.3, Timer_GiveKnifeBack, pack);
-            pack.WriteCell(GetClientUserId(client));
-        } else {
-            // Refresh normal para AK e Pistolas
-            int ammo = GetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
-            int clip = GetEntProp(weapon, Prop_Send, "m_iClip1");
+                if (slot == 2) {
+                    RemovePlayerItem(client, weapon);
+                    AcceptEntityInput(weapon, "Kill");
+                    
+                    DataPack pack;
+                    CreateDataTimer(0.3, Timer_GiveKnifeBack, pack);
+                    pack.WriteCell(GetClientUserId(client));
+                } else {
+                    int ammo = GetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
+                    int clip = GetEntProp(weapon, Prop_Send, "m_iClip1");
 
-            RemovePlayerItem(client, weapon);
-            AcceptEntityInput(weapon, "Kill");
-            
-            int newWep = GivePlayerItem(client, classname);
-            if (newWep > 0) {
-                SetEntProp(newWep, Prop_Send, "m_iClip1", clip);
-                SetEntProp(newWep, Prop_Send, "m_iPrimaryReserveAmmoCount", ammo);
+                    RemovePlayerItem(client, weapon);
+                    AcceptEntityInput(weapon, "Kill");
+                    
+                    int newWep = GivePlayerItem(client, classname);
+                    if (newWep > 0) {
+                        SetEntProp(newWep, Prop_Send, "m_iClip1", clip);
+                        SetEntProp(newWep, Prop_Send, "m_iPrimaryReserveAmmoCount", ammo);
+                    }
+                }
             }
         }
-    }
-}
     }
     return Plugin_Stop;
 }
@@ -138,23 +137,4 @@ public Action Timer_GiveKnifeBack(Handle timer, DataPack pack) {
         GivePlayerItem(client, "weapon_knife"); 
     }
     return Plugin_Stop;
-}
-
-public Action Timer_TriggerReload(Handle timer) {
-    for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && !IsFakeClient(i)) {
-            Weapons_ReloadPlayerData(i); 
-            
-            CreateTimer(0.6, Timer_RefreshReal, GetClientUserId(i));
-        }
-    }
-    return Plugin_Stop;
-}
-
-public void SQL_ConfirmarUpdate(Database db, DBResultSet results, const char[] error, any data) {
-    if (error[0] != '\0') {
-        PrintToServer("[Avalon-SQL-Erro] %s", error);
-    } else {
-        PrintToServer("[Avalon-SQL] Banco atualizado com sucesso (Linhas afetadas: %d)", results.AffectedRows);
-    }
 }
