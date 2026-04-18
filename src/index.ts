@@ -22,6 +22,8 @@ import skinsRouter from './routes/skinsRoutes';
 import webhookController from './controllers/webhookController';
 
 import { startCronJobs } from './jobs/vipStatus';
+import questsRouter from './routes/questsRoutes';
+import { cleanUpExpiredQuests, startQuestGenerator } from './services/questGenerator';
 
 
 const app = express();
@@ -44,8 +46,6 @@ app.use(cors({
         const allowedOrigins = [
             `${process.env.FRONTEND_URL}` as string,
         ];
-              console.log('Origin recebida:', origin);
-console.log('Allowed:', allowedOrigins);
 
         if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
             callback(null, true);
@@ -74,7 +74,7 @@ app.use(
     }),
     secret: process.env.SESSION_SECRET as string,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: { 
       secure: isProduction, 
       sameSite: isProduction ? 'none' : 'lax', 
@@ -89,7 +89,6 @@ app.use(passport.session());
 
 app.use((req, _res, next) => {
   if (req.isAuthenticated()) {
-    console.log('Autenticado via cookie');
     return next();
   }
 
@@ -129,13 +128,22 @@ app.use('/api/store', storeRoutes);
 app.use('/api/server-info', serverRoutes);
 app.use('/api/webhooks', webhookController);
 app.use('/api/skins', skinsRouter);
+app.use('/api/quests', questsRouter);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+
+  try {
+    await cleanUpExpiredQuests(); 
+    console.log("[AVALON] Faxina inicial concluída com sucesso.");
+  } catch (err) {
+    console.error("[AVALON] Erro na faxina inicial:", err);
+  }
 
   updateServerInfo();
   startCronJobs();
+  startQuestGenerator();
   setInterval(updateServerInfo, 30_000);
 });

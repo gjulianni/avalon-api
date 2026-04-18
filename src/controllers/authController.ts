@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { SteamUser } from '../types';
+import { prisma } from '../database';
 
 const pendingTokens = new Map<string, { sessionId: string; expiresAt: number }>();
 
@@ -10,7 +11,7 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-export const getUser = (req: Request, res: Response): void => {
+export const getUser = async (req: Request, res: Response): Promise<void> => {
 
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -18,8 +19,15 @@ export const getUser = (req: Request, res: Response): void => {
 
   if (req.isAuthenticated() || req.user) {
     const user = req.user as SteamUser;
+
+    const adminRecord = await prisma.serverAdmin.findUnique({
+        where: { steamId: user.id }
+      });
+      const isAdmin = !!adminRecord;
+
     res.json({
       loggedIn: true,
+      isAdmin: isAdmin,
       user: {
         steamid: user.id,
         name: user.displayName,

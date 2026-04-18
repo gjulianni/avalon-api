@@ -80,3 +80,74 @@ model PlayerGlove {
   ctFloat   Float    @default(0.0)
   updatedAt DateTime @updatedAt
 }
+
+
+model PlayerStats {
+  steamId           String   @id 
+  zombieDamage      Int      @default(0)
+  bossDamage        Int      @default(0)
+  playtimeMinutes   Int      @default(0)
+  zombieTankDamage  Int      @default(0)
+  humansInfected    Int      @default(0)
+  roundsSurvived    Int      @default(0)
+  updatedAt         DateTime @updatedAt
+}
+
+
+model Quest {
+  id              Int      @id @default(autoincrement())
+  title           String  
+  description     String   
+  type            String   // 'ZOMBIE_DAMAGE', 'BOSS_DAMAGE', 'PLAYTIME'
+  targetValue     Int     
+  eventName       String? 
+  useridField     String? 
+  conditions      Json?
+  rewardCredits   Int      @default(0) 
+  rewardItem      String?  // nome interno do Player Model (ex: "sephiroth_model")
+  isActive        Boolean  @default(true)
+  expiresAt       DateTime?
+  
+  playerQuests    PlayerQuest[]
+}
+
+model ServerAdmin {
+  steamId   String   @id
+  name      String?  
+  addedAt   DateTime @default(now())
+}
+
+model PlayerQuest {
+  id              Int      @id @default(autoincrement())
+  steamId         String
+  questId         Int
+  progress        Int      @default(0)
+  status          String   @default("IN_PROGRESS") // 'IN_PROGRESS', 'COMPLETED', 'CLAIMED', 'PENDING_DELIVERY'
+  updatedAt       DateTime @updatedAt
+
+  quest           Quest    @relation(fields: [questId], references: [id])
+  
+  @@unique([steamId, questId])
+}
+
+model QuestTemplate {
+  id              String   @id @default(uuid())
+  tier            String   // Pode ser 'DAILY', 'WEEKLY' ou 'MONTHLY'
+  type            String   // 'ZOMBIE_DAMAGE', 'BOSS_DAMAGE', 'PLAYTIME'
+  eventName       String?   // Ex: 'player_hurt'
+  useridField     String?
+  titles          Json     
+  descriptions    Json     
+
+  // A inteligência do balanceamento:
+  minTarget       Int      // Meta mínima (Ex: 10000 de dano)
+  maxTarget       Int      // Meta máxima (Ex: 50000 de dano)
+  minReward       Int      // Recompensa mínima
+  maxReward       Int      // Recompensa máxima
+
+  // Condições nativas que o template sempre deve injetar (Ex: ser CT, atirar em TR)
+  baseConditions  Json?    
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
