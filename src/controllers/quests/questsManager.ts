@@ -28,10 +28,20 @@ export const getAllQuestsForMenu = async (req: Request, res: Response) => {
     });
 
     const unifiedList = activeQuests.map(quest => {
-      const progress = playerProgress.find(p => p.questId === quest.id);
+    const progress = playerProgress.find(p => p.questId === quest.id);
+
+      let formattedDate = "Permanente";
+      if (quest.expiresAt) {
+        formattedDate = new Date(quest.expiresAt).toLocaleString('pt-BR', { 
+          timeZone: 'America/Sao_Paulo',
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      }
       
       return {
         ...quest,
+        expiresAtBR: formattedDate,
         userProgress: progress ? {
           progress: progress.progress,
           status: progress.status
