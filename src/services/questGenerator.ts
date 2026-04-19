@@ -93,15 +93,23 @@ async function generateQuestsForTier(tier: 'DAILY' | 'WEEKLY' | 'MONTHLY', amoun
 export function startQuestGenerator() {
   console.log('[AVALON BOT] Robô gerador de missões inicializado.');
 
-  cron.schedule('0 0 * * *', async () => {
-    await generateQuestsForTier('DAILY', 3, 24);
-  });
-
+  const cronOptions = {
+    timezone: "America/Sao_Paulo"
+  };
+cron.schedule('0 0 * * *', async () => {
+    try {
+      
+      await cleanUpExpiredQuests(); 
+      
+      await generateQuestsForTier('DAILY', 3, 24); 
+    } catch (error) {
+      console.error('[AVALON] Erro na virada do dia:', error);
+    }
+  }, cronOptions);
   cron.schedule('0 0 * * 0', async () => {
     await generateQuestsForTier('WEEKLY', 2, 168);
-  });
-
+  }, cronOptions);
   cron.schedule('0 0 1 * *', async () => {
     await generateQuestsForTier('MONTHLY', 1, 720);
-  });
+  }, cronOptions);
 }

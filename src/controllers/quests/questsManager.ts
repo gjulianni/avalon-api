@@ -60,7 +60,7 @@ export const createQuest = async (req: Request, res: Response) => {
   const { 
     title, description, type, targetValue, 
     eventName, useridField, conditions, 
-    rewardCredits, rewardItem, duration 
+    rewardCredits, rewardItem, duration, customExpiresAt 
   } = req.body;
 
   // Validação básica
@@ -79,9 +79,17 @@ export const createQuest = async (req: Request, res: Response) => {
       expiresAt.setDate(expiresAt.getDate() + 7);
     } else if (duration === 'MONTHLY') {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
-    } else {
-      return res.status(400).json({ success: false, error: 'Duração inválida. Use DAILY, WEEKLY ou MONTHLY.' });
+    } else if (duration === 'CUSTOM') {
+      if (!customExpiresAt) return res.status(400).json({ success: false, error: 'Data de expiração personalizada não fornecida.' });
     }
+    expiresAt = new Date(customExpiresAt);
+
+    if (isNaN(expiresAt.getTime())) {
+        return res.status(400).json({ success: false, error: 'O formato da data personalizada é inválido.' });
+    }
+
+    if (expiresAt <= new Date()) return res.status(400).json({ success: false, error: 'O formato da data personalizada é inválido.' });
+
 
     const newQuest = await prisma.quest.create({
       data: {

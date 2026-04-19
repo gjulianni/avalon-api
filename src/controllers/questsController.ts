@@ -92,35 +92,48 @@ export const syncPlayerStats = async (req: Request, res: Response) => {
           });
         }
       }
-      const pendingRewards = await prisma.playerQuest.findMany({
-        where: { 
-          steamId: steamId, 
-          status: 'PENDING_DELIVERY' 
-        },
-        include: { quest: true }
-      });
-
-      if (pendingRewards.length > 0) {
-        rewardsToDeliver.push({
-          steamId: steamId,
-          items: pendingRewards.map(pr => ({
-            playerQuestId: pr.id,
-            credits: pr.quest.rewardCredits,
-            itemUniqueId: pr.quest.rewardItem // Ex: "sephiroth_model"
-          }))
+        const pendingRewards = await prisma.playerQuest.findMany({
+          where: {
+            steamId: steamId,
+            status: 'PENDING_DELIVERY'
+          },
+          include: { quest: true }
         });
 
-        await prisma.playerQuest.updateMany({
-          where: { id: { in: pendingRewards.map(pr => pr.id) } },
-          data: { status: 'CLAIMED' }
-        });
-      }
+        if (pendingRewards.length > 0) {
+
+          rewardsToDeliver.push({
+            steamId: steamId,
+            items: pendingRewards.map(pr => {
+              let parsedUniqueId = pr.quest.rewardItem;
+              let durationDays = 0;
+
+              if (parsedUniqueId && parsedUniqueId.includes(':')) {
+                const parts = parsedUniqueId.split(':');
+                parsedUniqueId = parts[0];
+                durationDays = parseInt(parts[1], 10);
+              }
+
+              return {
+                playerQuestId: pr.id,
+                credits: pr.quest.rewardCredits,
+                itemUniqueId: parsedUniqueId,
+                durationDays: durationDays
+              };
+            })
+          });
+
+          await prisma.playerQuest.updateMany({
+            where: { id: { in: pendingRewards.map(pr => pr.id) } },
+            data: { status: 'CLAIMED' }
+          });
+        }
 
       }))
 
-    return res.status(200).json({ 
-      success: true, 
-      rewards: rewardsToDeliver 
+    return res.status(200).json({
+      success: true,
+      rewards: rewardsToDeliver
     });
 
   } catch (error) {

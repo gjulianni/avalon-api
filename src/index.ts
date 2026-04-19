@@ -135,13 +135,8 @@ app.use('/api/quests', questsRouter);
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 
-  try {
-    await cleanUpExpiredQuests(); 
-    console.log("[AVALON] Faxina inicial concluída com sucesso.");
-  } catch (err) {
-    console.error("[AVALON] Erro na faxina inicial:", err);
-  }
-
+  cleanUpExpiredQuests().catch(err => console.error("[AVALON] Erro na faxina inicial:", err));
+  
   updateServerInfo();
   startCronJobs();
   startQuestGenerator();

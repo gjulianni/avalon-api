@@ -56,7 +56,7 @@ async function main() {
       maxTarget: 15,
       minReward: 300,
       maxReward: 500,
-      baseConditions: []
+      baseConditions: [{ "field": "userid", "value": "ct" }, { "field": "attacker", "value": "t" }]
     },
     {
       tier: 'DAILY',
@@ -184,8 +184,8 @@ async function main() {
       ],
       minTarget: 1500,
       maxTarget: 3500,
-      minReward: 3000,
-      maxReward: 6000,
+      minReward: 1600,
+      maxReward: 3000,
       baseConditions: []
     },
     {
@@ -200,8 +200,8 @@ async function main() {
       ],
       minTarget: 420,
       maxTarget: 840,
-      minReward: 4000,
-      maxReward: 5300,
+      minReward: 2000,
+      maxReward: 3300,
       baseConditions: []
     },
 
@@ -218,8 +218,8 @@ async function main() {
       ],
       minTarget: 2000000,
       maxTarget: 4000000,
-      minReward: 8000,
-      maxReward: 15000,
+      minReward: 4000,
+      maxReward: 9000,
       baseConditions: [{ field: 'userid', value: 't' }, { field: 'attacker', value: 'ct' }]
     },
     {
@@ -232,10 +232,10 @@ async function main() {
         'Demonstre resistência absoluta absorvendo {TARGET} de dano total neste mês.',
         'Sua missão é ser o escudo da horda: bloqueie {TARGET} de dano vindo dos humanos.'
       ],
-      minTarget: 500000,   // 500k de dano absorvido
-      maxTarget: 1200000,  // 1.2M de dano absorvido
-      minReward: 15000,
-      maxReward: 35000,
+      minTarget: 800000,   // 800k de dano absorvido
+      maxTarget: 2900000,  // 2.9M de dano absorvido
+      minReward: 7000,
+      maxReward: 18000,
       baseConditions: [{ field: 'userid', value: 't' }, { field: 'attacker', value: 'ct' }]
     },
 
@@ -251,8 +251,8 @@ async function main() {
       ],
       minTarget: 150,      // 150 infecções no mês
       maxTarget: 400,      // 400 infecções no mês
-      minReward: 20000,
-      maxReward: 45000,
+      minReward: 10000,
+      maxReward: 25000,
       baseConditions: []
     },
     {
@@ -267,8 +267,8 @@ async function main() {
       ],
       minTarget: 60,       // Média de 2 fugas por dia
       maxTarget: 150,      // Média de 5 fugas por dia
-      minReward: 25000,
-      maxReward: 55000,
+      minReward: 7000,
+      maxReward: 19000,
       baseConditions: []
     }
   ];
