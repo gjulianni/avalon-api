@@ -173,26 +173,30 @@ export const getValidSkinIds = async (req: Request, res: Response) => {
 
     console.log("[AVALON] Lendo o arquivo weapons_brazilian.cfg...");
 
-    const cfgPath = path.join(__dirname, '../data/weapons_brazilian.cfg');
- 
-    const fileContent = fs.readFileSync(cfgPath, 'utf-8');
+    const cfgPath = path.join(process.cwd(), 'src', 'data', 'weapons_brazilian.cfg');
+    
 
+    if (!fs.existsSync(cfgPath)) {
+      console.error(`[AVALON] Arquivo não encontrado no caminho: ${cfgPath}`);
+      return res.status(500).json({ success: false, error: "Arquivo de configuração não encontrado no servidor." });
+    }
+
+    const fileContent = fs.readFileSync(cfgPath, 'utf-8');
     const regex = /"index"\s+"(\d+)"/g;
     let match;
-    const idsSet = new Set<string>(); 
+    const idsSet = new Set<string>();
 
     while ((match = regex.exec(fileContent)) !== null) {
-      idsSet.add(match[1]); 
+      idsSet.add(match[1]);
     }
 
     cachedValidIds = Array.from(idsSet);
-
-    console.log(`[AVALON] Extraídos ${cachedValidIds.length} IDs válidos de skins.`);
+    console.log(`[AVALON] Extraídos ${cachedValidIds.length} IDs válidos.`);
 
     return res.status(200).json({ success: true, data: cachedValidIds });
 
   } catch (error) {
     console.error("Erro ao ler o arquivo de skins:", error);
-    return res.status(500).json({ success: false, error: "Erro interno ao processar IDs de skins" });
+    return res.status(500).json({ success: false, error: "Erro interno ao processar skins" });
   }
 };
