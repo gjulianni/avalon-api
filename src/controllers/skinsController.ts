@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../database';
+import fs from 'fs';
+import path from 'path';
 
 const knifeModelIds: Record<string, number> = {
   'knife_karambit': 33,
@@ -158,5 +160,39 @@ export const getPlayerInventory = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erro ao buscar inventário:", error);
     return res.status(500).json({ success: false, message: "Erro interno no servidor." });
+  }
+};
+
+let cachedValidIds: string[] = [];
+
+export const getValidSkinIds = async (req: Request, res: Response) => {
+  try {
+    if (cachedValidIds.length > 0) {
+      return res.status(200).json({ success: true, data: cachedValidIds });
+    }
+
+    console.log("[AVALON] Lendo o arquivo weapons_brazilian.cfg...");
+
+    const cfgPath = path.join(__dirname, '../data/weapons_brazilian.cfg');
+ 
+    const fileContent = fs.readFileSync(cfgPath, 'utf-8');
+
+    const regex = /"index"\s+"(\d+)"/g;
+    let match;
+    const idsSet = new Set<string>(); 
+
+    while ((match = regex.exec(fileContent)) !== null) {
+      idsSet.add(match[1]); 
+    }
+
+    cachedValidIds = Array.from(idsSet);
+
+    console.log(`[AVALON] Extraídos ${cachedValidIds.length} IDs válidos de skins.`);
+
+    return res.status(200).json({ success: true, data: cachedValidIds });
+
+  } catch (error) {
+    console.error("Erro ao ler o arquivo de skins:", error);
+    return res.status(500).json({ success: false, error: "Erro interno ao processar IDs de skins" });
   }
 };
