@@ -66,6 +66,7 @@ async function generateQuestsForTier(tier: 'DAILY' | 'WEEKLY' | 'MONTHLY', amoun
       const finalDescription = rawDescription.replace('{TARGET}', finalTarget.toLocaleString('pt-BR'));
    
       const expirationDate = new Date(Date.now() + hoursToRule * 60 * 60 * 1000);
+      expirationDate.setUTCHours(2, 59, 59, 0); 
 
       await prisma.quest.create({
         data: {
