@@ -199,9 +199,21 @@ export const checkout = async (
   const z = accountId / 2n;
   const steamIdString = `STEAM_1:${y}:${z}`;
   try {
+
+    let originalName = steamUser.displayName || "";
+
+    let safeName = originalName
+      .replace(/[^\p{L}\p{N}\s]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (safeName.length < 3) {
+      safeName = "Jogador";
+    }
+
     const payload: any = {
       gateway,
-      client_name: steamUser.displayName,
+      client_name: safeName,
       client_email: email,
       terms: true,
       client_identifier: steamIdString,
@@ -230,7 +242,10 @@ export const checkout = async (
 
     if (!response.ok) {
       console.error("ERRO CENTRALCART:", JSON.stringify(raw, null, 2));
-      res.status(response.status).json({ error: raw.message || 'Erro de validação na API da loja.' });
+
+      const errorMessage = raw.errors?.[0]?.message || raw.message || 'Erro de validação na API da loja.';
+
+      res.status(response.status).json({ error: errorMessage });
       return;
     }
 
