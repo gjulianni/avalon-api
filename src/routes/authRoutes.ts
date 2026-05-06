@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import passport from 'passport';
-import { getUser, logout, steamReturn } from '../controllers/authController';
+import { exchangeToken, getUser, logout, steamReturn } from '../controllers/authController';
 
 const router = Router();
 
 router.get(
-  '/steam', 
+  '/steam',
   passport.authenticate('steam', { failureRedirect: `${process.env.FRONTEND_URL}?error=auth_failed` })
 );
 
@@ -16,6 +16,7 @@ router.get(
 );
 
 router.get('/user', getUser);
+router.post('/exchange', exchangeToken);
 
 router.post('/logout', logout);
 

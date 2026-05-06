@@ -31,13 +31,16 @@ const getThumbnailUrl = async (mapId: string): Promise<string | null> => {
   }
 };
 
+const ATTEMPTS = 2;
+const QUERY_TIMEOUT = 5000;
+
 export const updateServerInfo = async (): Promise<void> => {
   try {
     const gameServerAddress = `${ZE_SERVER.ip}:${ZE_SERVER.port}`;
 
     const [serverInfo, serverPlayerList] = await Promise.all([
-      queryGameServerInfo(gameServerAddress),
-      queryGameServerPlayer(gameServerAddress),
+      queryGameServerInfo(gameServerAddress, ATTEMPTS, QUERY_TIMEOUT),
+      queryGameServerPlayer(gameServerAddress, ATTEMPTS, QUERY_TIMEOUT),
     ]);
 
     const filteredInfo = {

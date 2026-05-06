@@ -4,7 +4,9 @@ import session from 'express-session';
 import passport from 'passport';
 import dotenv from 'dotenv';
 import dns from 'dns';
-import SQLiteStoreFactory from 'connect-sqlite3';
+import pg from 'pg';
+import pgSession from 'connect-pg-simple';
+import type {} from './types/session';
 
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 dns.setDefaultResultOrder('ipv4first');
@@ -16,23 +18,45 @@ import { updateServerInfo } from './configs/serverCache';
 import authRoutes from './routes/authRoutes';
 import storeRoutes from './routes/storeRoutes';
 import serverRoutes from './routes/serverRoutes';
+import skinsRouter from './routes/skinsRoutes';
 import webhookController from './controllers/webhookController';
 
+import { startCronJobs } from './jobs/vipStatus';
+import questsRouter from './routes/questsRoutes';
+import { cleanUpExpiredQuests, startQuestGenerator } from './services/questGenerator';
+
+
 const app = express();
-const PORT = process.env.PORT || 3000;
-const SQLiteStore = SQLiteStoreFactory(session);
+const PORT = Number(process.env.PORT) || 3000;
+const pgPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const PostgresStore = pgSession(session);
 app.set('trust proxy', 1);
 
 // ── Middlewares ──────────────────────────────────────────────────────────────
 
-console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        
+  
 
-app.use(
-  cors({
-    origin: (process.env.FRONTEND_URL as string).replace(/\/$/, ""),
+        const allowedOrigins = [
+            `${process.env.FRONTEND_URL}` as string,
+        ];
+
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido por CORS'));
+        }
+    },
     credentials: true,
-  })
-);
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 
 app.use(express.json({
   verify: (req: any, res, buf) => {
@@ -44,10 +68,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(
   session({
-    store: new SQLiteStore({
-      db: 'sessions.sqlite', 
-      dir: './prisma'        
-    }) as any, 
+    store: new PostgresStore({
+      pool: pgPool,
+      tableName: 'session',
+    }),
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
@@ -63,6 +87,36 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req, _res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+
+  const authHeader = req.headers['authorization'];
+  if (!authHeader?.startsWith('Bearer ')) return next();
+
+  const sessionId = authHeader.slice(7);
+  console.log('Tentando autenticar via header, sessionId:', sessionId);
+
+  req.sessionStore.get(sessionId, (err, sessionData) => {
+    if (err) {
+      console.log('Erro no sessionStore:', err);
+      return next();
+    }
+    if (!sessionData) {
+      console.log('Sessão não encontrada no DB para ID:', sessionId);
+      return next();
+    }
+    if (sessionData.passport?.user) {
+      req.user = sessionData.passport.user;
+      (req as any).isAuthenticated = () => true;
+    }
+
+    next();
+  });
+});
+
+
 // ── Passport Config ──────────────────────────────────────────────────────────
 
 configurePassport();
@@ -73,12 +127,18 @@ app.use('/api/auth', authRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/server-info', serverRoutes);
 app.use('/api/webhooks', webhookController);
+app.use('/api/skins', skinsRouter);
+app.use('/api/quests', questsRouter);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 
+  cleanUpExpiredQuests().catch(err => console.error("[AVALON] Erro na faxina inicial:", err));
+  
   updateServerInfo();
+  startCronJobs();
+  startQuestGenerator();
   setInterval(updateServerInfo, 30_000);
 });
