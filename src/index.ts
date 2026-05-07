@@ -4,6 +4,8 @@ import session from 'express-session';
 import passport from 'passport';
 import dotenv from 'dotenv';
 import dns from 'dns';
+import http from 'http';
+import { Server } from 'socket.io';
 import pg from 'pg';
 import pgSession from 'connect-pg-simple';
 import type {} from './types/session';
@@ -14,7 +16,6 @@ dns.setDefaultResultOrder('ipv4first');
 dotenv.config();
 
 import { configurePassport } from './configs/passport';
-import { updateServerInfo } from './configs/serverCache';
 import authRoutes from './routes/authRoutes';
 import storeRoutes from './routes/storeRoutes';
 import serverRoutes from './routes/serverRoutes';
@@ -27,6 +28,9 @@ import { cleanUpExpiredQuests, startQuestGenerator } from './services/questGener
 
 
 const app = express();
+
+const server = http.createServer(app);
+
 const PORT = Number(process.env.PORT) || 3000;
 const pgPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -35,13 +39,18 @@ const pgPool = new pg.Pool({
 const PostgresStore = pgSession(session);
 app.set('trust proxy', 1);
 
+export const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST"]
+  }
+});
+
 // ── Middlewares ──────────────────────────────────────────────────────────────
 
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        
-  
 
         const allowedOrigins = [
             `${process.env.FRONTEND_URL}` as string,
@@ -132,13 +141,11 @@ app.use('/api/quests', questsRouter);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", async () => {
+server.listen(PORT, "0.0.0.0", async () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 
   cleanUpExpiredQuests().catch(err => console.error("[AVALON] Erro na faxina inicial:", err));
   
-  updateServerInfo();
   startCronJobs();
   startQuestGenerator();
-  setInterval(updateServerInfo, 30_000);
 });

@@ -2,6 +2,7 @@ export interface ServerCache {
   serverInfo: FilteredServerInfo | null;
   thumbnailUrl: string | null;
   lastUpdated: string | null;
+  roundStartTime: string | null;
 }
 
 export interface FilteredServerInfo {
@@ -18,6 +19,9 @@ export interface PlayerInfo {
   name: string;
   score: number;
   duration: number;
+  team: number;
+  isAlive: boolean;
+  isZombie: boolean;
 }
 
 export interface SteamUser {
