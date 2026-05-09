@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SteamUser } from '../types';
 import { prisma } from '../database';
+import convertSteamID from '../helpers/convertSteamID';
 
 const pendingTokens = new Map<string, { sessionId: string; expiresAt: number }>();
 
@@ -19,15 +20,30 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 
   if (req.isAuthenticated() || req.user) {
     const user = req.user as SteamUser;
+    const convertedSteamId = convertSteamID(user.id);
 
     const adminRecord = await prisma.serverAdmin.findUnique({
         where: { steamId: user.id }
       });
       const isAdmin = !!adminRecord;
 
+    const vipRecord = await prisma.vipOrder.findFirst({
+      where: {
+        steamId: convertedSteamId
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
     res.json({
       loggedIn: true,
       isAdmin: isAdmin,
+      isVip: vipRecord ? {
+        status: vipRecord.status, 
+        group: vipRecord.vipGroup,
+        expiresAt: vipRecord.expiresAt,
+        durationDays: vipRecord.durationDays,
+        createdAt: vipRecord.createdAt
+      } : null,
       user: {
         steamid: user.id,
         name: user.displayName,
