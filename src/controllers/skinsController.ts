@@ -27,16 +27,25 @@ const knifeModelIds: Record<string, number> = {
 
 
 export const equipWeaponSkin = async (req: Request, res: Response) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  let steamIdString: string;
+
+  const isServerRequest = req.headers['x-server-api-key'] === process.env.SERVER_API_KEY;
+
+  if (isServerRequest) {
+    if (!req.body.steamId) {
+      return res.status(400).json({ error: "steamId é obrigatório para requisições do servidor." });
+    }
+    steamIdString = String(req.body.steamId);
+  } else {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const steamUser = req.user as any;
+    const accountId = BigInt(steamUser.id) - BigInt('76561197960265728');
+    const y = accountId % 2n;
+    const z = accountId / 2n;
+    steamIdString = `STEAM_1:${y}:${z}`;
   }
-
-  const steamUser = req.user as any;
-  const accountId = BigInt(steamUser.id) - BigInt('76561197960265728');
-  const y = accountId % 2n;
-  const z = accountId / 2n;
-  const steamIdString = `STEAM_1:${y}:${z}`;
-
 
   const { weaponName, paintKit, wearFloat, statTrak, statTrakCount, nameTag, seed } = req.body;
 
