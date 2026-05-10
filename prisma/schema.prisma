@@ -63,6 +63,7 @@ model PlayerWeaponSkin {
   seed            Int      @default(-1)  // Pattern
   updatedAt       DateTime @updatedAt
   createdAt       DateTime @default(now())
+  isEquipped  Boolean  @default(false)
 
   @@index([steamId])
   @@unique([steamId, weaponName]) 

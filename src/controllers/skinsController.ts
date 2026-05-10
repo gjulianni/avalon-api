@@ -54,6 +54,21 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
   }
 
   try {
+
+    const isKnife = weaponName.startsWith('knife') || weaponName === 'bayonet';
+    if (isKnife) {
+      await prisma.playerWeaponSkin.updateMany({
+        where: {
+          steamId: steamIdString,
+          OR: [
+            { weaponName: { startsWith: 'knife' } },
+            { weaponName: 'bayonet' }
+          ]
+        },
+        data: { isEquipped: false }
+      });
+    }
+
     const skin = await prisma.playerWeaponSkin.upsert({
       where: {
         steamId_weaponName: {
@@ -97,7 +112,6 @@ export const syncPlayerSkins = async (req: Request, res: Response) => {
   }
 
   try {
-
     const parts = steamId.split(':'); 
     
     if (parts.length !== 3 || !parts[0].startsWith('STEAM_')) {
@@ -111,16 +125,24 @@ export const syncPlayerSkins = async (req: Request, res: Response) => {
       `STEAM_0:${y}:${z}`,
       `STEAM_1:${y}:${z}`
     ];
+    
     const allSkins = await prisma.playerWeaponSkin.findMany({
-     where: { 
+      where: { 
         steamId: { in: possibleSteamIds } 
-      },
-      orderBy: {
-        updatedAt: 'asc', 
-      },
+      }
     });
 
-    const mappedSkins = allSkins.map(skin => {
+    const activeSkins = allSkins.filter(skin => {
+      const isKnife = skin.weaponName.startsWith('knife') || skin.weaponName === 'bayonet';
+      
+      if (isKnife) {
+        return skin.isEquipped === true; 
+      }
+      
+      return true; 
+    });
+
+    const finalSkins = activeSkins.map(skin => {
       return {
         steamId: skin.steamId,
         weaponName: skin.weaponName,
@@ -132,10 +154,6 @@ export const syncPlayerSkins = async (req: Request, res: Response) => {
           : 0
       };
     });
-
-    const skinsOnly = mappedSkins.filter(s => !s.weaponName.startsWith('knife') && s.weaponName !== 'bayonet');
-    const lastKnife = mappedSkins.filter(s => s.weaponName.startsWith('knife') || s.weaponName === 'bayonet').pop();
-    const finalSkins = lastKnife ? [...skinsOnly, lastKnife] : skinsOnly;
 
     return res.status(200).json({ success: true, skins: finalSkins, gloves: [] });
   } catch (error) {
