@@ -62,12 +62,12 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
         }
       },
       update: {
-        paintKit: Number(paintKit) || 0,
-        wearFloat: Number(wearFloat) || 0.0,
-        statTrak: Boolean(statTrak),
-        statTrakCount: Number(statTrakCount) || 0,
-        nameTag: nameTag || "",
-        seed: Number(seed) || -1,
+        paintKit: paintKit !== undefined ? Number(paintKit) : undefined,
+        wearFloat: wearFloat !== undefined ? Number(wearFloat) : undefined,
+        statTrak: statTrak !== undefined ? Boolean(statTrak) : undefined,
+        statTrakCount: statTrakCount !== undefined ? Number(statTrakCount) : undefined,
+        nameTag: nameTag !== undefined ? nameTag : undefined,
+        seed: seed !== undefined ? Number(seed) : undefined,
       },
       create: {
         steamId: steamIdString,
