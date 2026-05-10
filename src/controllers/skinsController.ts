@@ -83,6 +83,7 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
         statTrakCount: statTrakCount !== undefined ? Number(statTrakCount) : undefined,
         nameTag: nameTag !== undefined ? nameTag : undefined,
         seed: seed !== undefined ? Number(seed) : undefined,
+        isEquipped: isKnife ? true : undefined,
       },
       create: {
         steamId: steamIdString,
@@ -93,6 +94,7 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
         statTrakCount: Number(statTrakCount) || 0,
         nameTag: nameTag || "",
         seed: Number(seed) || -1,
+        isEquipped: isKnife ? true : false,
       }
     });
 
