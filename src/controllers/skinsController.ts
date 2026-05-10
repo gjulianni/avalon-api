@@ -139,6 +139,12 @@ export const syncPlayerSkins = async (req: Request, res: Response) => {
       }
     });
 
+    const allStickers = await prisma.playerWeaponStickers.findMany({
+      where: {
+        steamId: { in: possibleSteamIds }
+      }
+    });
+
     const activeSkins = allSkins.filter(skin => {
       const isKnife = skin.weaponName.startsWith('knife') || skin.weaponName === 'bayonet';
       
@@ -162,7 +168,30 @@ export const syncPlayerSkins = async (req: Request, res: Response) => {
       };
     });
 
-    return res.status(200).json({ success: true, skins: finalSkins, gloves: [] });
+    const finalStickers = allStickers.map(sticker => {
+      return {
+        weaponIndex: sticker.weaponIndex,
+        slot0: sticker.slot0,
+        slot1: sticker.slot1,
+        slot2: sticker.slot2,
+        slot3: sticker.slot3,
+        slot4: sticker.slot4,
+        slot5: sticker.slot5,
+        wear0: sticker.wear0,
+        wear1: sticker.wear1,
+        wear2: sticker.wear2,
+        wear3: sticker.wear3,
+        wear4: sticker.wear4,
+        wear5: sticker.wear5
+      };
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      skins: finalSkins, 
+      stickers: finalStickers, 
+      gloves: [] 
+    });
   } catch (error) {
     console.error("Erro no sync individual:", error);
     return res.status(500).json({ success: false });
@@ -187,9 +216,12 @@ export const getPlayerInventory = async (req: Request, res: Response) => {
       where: {  steamId: steamIdString },
     });
 
+    const stickers = await prisma.playerWeaponStickers.findMany({ where: { steamId: steamIdString } });
+
     return res.status(200).json({
       success: true,
-      inventory
+      inventory,
+      stickers
     });
   } catch (error) {
     console.error("Erro ao buscar inventário:", error);

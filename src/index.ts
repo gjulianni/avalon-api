@@ -25,6 +25,7 @@ import webhookController from './controllers/webhookController';
 import { startCronJobs } from './jobs/vipStatus';
 import questsRouter from './routes/questsRoutes';
 import { cleanUpExpiredQuests, startQuestGenerator } from './services/questGenerator';
+import stickersRouter from './routes/stickersRoutes';
 
 
 const app = express();
@@ -138,6 +139,7 @@ app.use('/api/server-info', serverRoutes);
 app.use('/api/webhooks', webhookController);
 app.use('/api/skins', skinsRouter);
 app.use('/api/quests', questsRouter);
+app.use('/api/stickers', stickersRouter);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 
