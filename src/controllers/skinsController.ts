@@ -47,10 +47,15 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
     steamIdString = `STEAM_1:${y}:${z}`;
   }
 
-  const { weaponName, paintKit, wearFloat, statTrak, statTrakCount, nameTag, seed } = req.body;
+  let { weaponName, paintKit, wearFloat, statTrak, statTrakCount, nameTag, seed } = req.body;
 
   if (!weaponName) {
     return res.status(400).json({ error: "O nome da arma é obrigatório." });
+  }
+
+  weaponName = String(weaponName);
+  if (weaponName.startsWith('weapon_')) {
+    weaponName = weaponName.replace('weapon_', '');
   }
 
   try {
