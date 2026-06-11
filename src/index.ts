@@ -6,8 +6,8 @@ import dotenv from 'dotenv';
 import dns from 'dns';
 import http from 'http';
 import { Server } from 'socket.io';
-import pg from 'pg';
-import pgSession from 'connect-pg-simple';
+import mysql from 'mysql2/promise';
+import MySQLStoreFactory from 'express-mysql-session';
 import type {} from './types/session';
 
 dns.setServers(['1.1.1.1', '1.0.0.1']);
@@ -33,11 +33,20 @@ const app = express();
 const server = http.createServer(app);
 
 const PORT = Number(process.env.PORT) || 3000;
-const pgPool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const MySQLStore = MySQLStoreFactory(session as any);
 
-const PostgresStore = pgSession(session);
+const mysqlPool = mysql.createPool(
+  process.env.DATABASE_URL as string
+);
+
+const sessionStore = new MySQLStore({
+  clearExpired: true,
+  checkExpirationInterval: 900000, 
+  schema: {
+    tableName: 'session', 
+  }
+}, mysqlPool as any);
+
 app.set('trust proxy', 1);
 
 export const io = new Server(server, {
@@ -78,10 +87,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(
   session({
-    store: new PostgresStore({
-      pool: pgPool,
-      tableName: 'session',
-    }),
+    store: sessionStore, 
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,

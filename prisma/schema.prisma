@@ -3,9 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+// ==========================================
+// SISTEMAS DO SITE (Vips, Quests, Loja)
+// ==========================================
 
 model PendingCommand {
   id        Int      @id @default(autoincrement())
@@ -17,9 +21,9 @@ model PendingCommand {
 model Order {
   id          String   @id
   status      String   @default("PENDING")
-  pixCode     String?
-  qrCode      String?
-  checkoutUrl String?
+  pixCode     String?  @db.Text
+  qrCode      String?  @db.Text
+  checkoutUrl String?  @db.Text
   price       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -41,47 +45,12 @@ model VipOrder {
 }
 
 model Session {
-  sid    String   @id @db.VarChar
-  sess   Json
-  expire DateTime @db.Timestamp(6)
+  session_id String @id @db.VarChar(128)
+  expires    Int    @db.UnsignedInt
+  data       String @db.MediumText
 
-  @@index([expire], map: "IDX_session_expire")
   @@map("session") 
 }
-
-model PlayerWeaponSkin {
-  id              String   @id @default(uuid())
-  steamId         String   
-  weaponName      String   
-
-  // propriedades de arma 
-  paintKit        Int      @default(0)   // skin id 
-  wearFloat       Float    @default(0.0) // desgaste
-  statTrak        Boolean  @default(false)
-  statTrakCount   Int      @default(0)
-  nameTag         String   @default("")
-  seed            Int      @default(-1)  // Pattern
-  updatedAt       DateTime @updatedAt
-  createdAt       DateTime @default(now())
-  isEquipped  Boolean  @default(false)
-
-  @@index([steamId])
-  @@unique([steamId, weaponName]) 
-}
-
-model PlayerGlove {
-  steamId   String   @id
-  
-  tGroup    Int      @default(0)
-  tGlove    Int      @default(0)
-  tFloat    Float    @default(0.0)
-  
-  ctGroup   Int      @default(0)
-  ctGlove   Int      @default(0)
-  ctFloat   Float    @default(0.0)
-  updatedAt DateTime @updatedAt
-}
-
 
 model PlayerStats {
   steamId           String   @id 
@@ -94,27 +63,25 @@ model PlayerStats {
   updatedAt         DateTime @updatedAt
 }
 
-
 model Quest {
   id              Int      @id @default(autoincrement())
   title           String  
-  description     String   
+  description     String  
   type            String   // 'ZOMBIE_DAMAGE', 'BOSS_DAMAGE', 'PLAYTIME'
   targetValue     Int     
-  eventName       String? 
+  eventName       String?
   useridField     String? 
   conditions      Json?
   rewardCredits   Int      @default(0) 
-  rewardItem      String?  // nome interno do Player Model (ex: "sephiroth_model")
+  rewardItem      String?
   isActive        Boolean  @default(true)
   expiresAt       DateTime?
-  
   playerQuests    PlayerQuest[]
 }
 
 model ServerAdmin {
   steamId   String   @id
-  name      String?  
+  name      String?
   addedAt   DateTime @default(now())
 }
 
@@ -133,57 +100,89 @@ model PlayerQuest {
 
 model QuestTemplate {
   id              String   @id @default(uuid())
-  tier            String   // Pode ser 'DAILY', 'WEEKLY' ou 'MONTHLY'
-  type            String   // 'ZOMBIE_DAMAGE', 'BOSS_DAMAGE', 'PLAYTIME'
-  eventName       String?   // Ex: 'player_hurt'
+  tier            String   
+  type            String   
+  eventName       String?
   useridField     String?
   titles          Json     
   descriptions    Json     
-
-  // A inteligência do balanceamento:
-  minTarget       Int      // Meta mínima (Ex: 10000 de dano)
-  maxTarget       Int      // Meta máxima (Ex: 50000 de dano)
-  minReward       Int      // Recompensa mínima
-  maxReward       Int      // Recompensa máxima
-
-  // Condições nativas que o template sempre deve injetar (Ex: ser CT, atirar em TR)
-  baseConditions  Json?    
-
+  minTarget       Int      
+  maxTarget       Int      
+  minReward       Int      
+  maxReward       Int      
+  baseConditions  Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 
-model PlayerWeaponStickers {
-  id          Int    @id @default(autoincrement())
-  steamId     String @db.VarChar(64)
-  weaponIndex Int    @default(0) 
+// ==========================================
+// INVENTÁRIO CS2 (cs2-WeaponPaints)
+// ==========================================
+
+model WpPlayerSkins {
+  steamid               String  @db.VarChar(18)
+  weapon_team           Int
+  weapon_defindex       Int
+  weapon_paint_id       Int
+  weapon_wear           Float   @default(0.000001) @db.Float
+  weapon_seed           Int     @default(0)
+  weapon_nametag        String? @db.VarChar(128)
+  weapon_stattrak       Boolean @default(false)
+  weapon_stattrak_count Int     @default(0)
   
-  // IDs dos Stickers (0 = Sem sticker)
-  slot0       Int    @default(0)
-  slot1       Int    @default(0)
-  slot2       Int    @default(0)
-  slot3       Int    @default(0)
-  slot4       Int    @default(0)
-  slot5       Int    @default(0)
-  
-  // Desgaste dos stickers
-  wear0       Float  @default(0.0)
-  wear1       Float  @default(0.0)
-  wear2       Float  @default(0.0)
-  wear3       Float  @default(0.0)
-  wear4       Float  @default(0.0)
-  wear5       Float  @default(0.0)
+  // No CS2, os adesivos e chaveiros são salvos como strings formatadas
+  weapon_sticker_0      String  @default("0;0;0;0;0;0;0") @db.VarChar(128)
+  weapon_sticker_1      String  @default("0;0;0;0;0;0;0") @db.VarChar(128)
+  weapon_sticker_2      String  @default("0;0;0;0;0;0;0") @db.VarChar(128)
+  weapon_sticker_3      String  @default("0;0;0;0;0;0;0") @db.VarChar(128)
+  weapon_sticker_4      String  @default("0;0;0;0;0;0;0") @db.VarChar(128)
+  weapon_keychain       String  @default("0;0;0;0;0") @db.VarChar(128)
 
-  // Rotações (Não utilizadas)
-  rotation0   Float  @default(0.0)
-  rotation1   Float  @default(0.0)
-  rotation2   Float  @default(0.0)
-  rotation3   Float  @default(0.0)
-  rotation4   Float  @default(0.0)
-  rotation5   Float  @default(0.0)
+  // O Prisma exige a chave primária composta que o plugin declarou como UNIQUE KEY
+  @@id([steamid, weapon_team, weapon_defindex])
+  @@map("wp_player_skins")
+}
 
-  lastSeen    Int    @default(0)
+model WpPlayerKnife {
+  steamid     String @db.VarChar(18)
+  weapon_team Int
+  knife       String @db.VarChar(64)
 
-  @@unique([steamId, weaponIndex])
-  @@map("csgo_weaponstickersx")
+  @@id([steamid, weapon_team])
+  @@map("wp_player_knife")
+}
+
+model WpPlayerMusic {
+  steamid     String @db.VarChar(64)
+  weapon_team Int
+  music_id    Int
+
+  @@id([steamid, weapon_team])
+  @@map("wp_player_music")
+}
+
+model WpPlayerGloves {
+  steamid         String @db.VarChar(18)
+  weapon_team     Int
+  weapon_defindex Int
+
+  @@id([steamid, weapon_team])
+  @@map("wp_player_gloves")
+}
+
+model WpPlayerAgents {
+  steamid  String  @id @db.VarChar(18) 
+  agent_ct String? @db.VarChar(64)
+  agent_t  String? @db.VarChar(64)
+
+  @@map("wp_player_agents")
+}
+
+model WpPlayerPins {
+  steamid     String @db.VarChar(64)
+  weapon_team Int
+  id          Int
+
+  @@id([steamid, weapon_team])
+  @@map("wp_player_pins")
 }
