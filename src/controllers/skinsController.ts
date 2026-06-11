@@ -1,49 +1,34 @@
 import { Request, Response } from 'express';
 import { prisma } from '../database';
 
-  const weaponDefindexes: Record<string, number> = {
+const weaponDefindexes: Record<string, number> = {
   // Pistols
-  'desert_eagle': 1, 'deagle': 1, 
-  'duals': 2, 'elite': 2, 
-  'five_seven': 3, 'fiveseven': 3, 
-  'glock': 4, 
+  'deagle': 1,
+  'elite': 2,
+  'fiveseven': 3, 
+  'glock': 4,
   'tec9': 30, 
-  'p2000': 32, 'hkp2000': 32, 
+  'p2000': 32, 'hkp2000': 32,
   'p250': 36, 
-  'usp_silencer': 61, 'usp': 61,
-  'cz75a': 63, 'cz75': 63, 
+  'usp_silencer': 61, 
+  'cz75a': 63, 
   'revolver': 64,
-
   // Rifles
   'ak47': 7, 
   'aug': 8, 
   'awp': 9, 
   'famas': 10, 
   'g3sg1': 11,
-  'galil': 13, 'galilar': 13, 
-  'm4a4': 16, 'm4a1': 16, 
+  'galilar': 13,
+  'm4a1': 16, // M4A4 
   'scar20': 38, 
-  'sg556': 39, 'sg553': 39, 
-  'ssg08': 40, 'ssg': 40,
-  'm4a1_silencer': 60, 'm4a1s': 60,
-
+  'sg556': 39, 
+  'ssg08': 40, 
+  'm4a1_silencer': 60, 
   // SMGs
-  'mac10': 17, 
-  'p90': 19, 
-  'mp5sd': 23, 
-  'ump45': 24, 'ump': 24, 
-  'bizon': 26, 
-  'mp7': 33, 
-  'mp9': 34,
-
+  'mac10': 17, 'p90': 19, 'mp5sd': 23, 'ump45': 24, 'bizon': 26, 'mp7': 33, 'mp9': 34,
   // Heavy
-  'm249': 14, 
-  'xm1014': 25, 
-  'mag7': 27, 
-  'negev': 28, 
-  'sawedoff': 29, 
-  'nova': 35,
-
+  'm249': 14, 'xm1014': 25, 'mag7': 27, 'negev': 28, 'sawedoff': 29, 'nova': 35,
   // Equipment
   'zeus': 31, 'taser': 31,
   // Facas CS2
@@ -96,7 +81,6 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
   if (!defindex) {
     return res.status(400).json({ error: `Arma não suportada: ${baseWeaponName}` });
   }
-  console.log(`[TESTE] tentando equipar: ${baseWeaponName}`);
 
   const isKnife = baseWeaponName.startsWith('knife') || baseWeaponName === 'bayonet';
 
