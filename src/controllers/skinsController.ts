@@ -52,6 +52,16 @@ const weaponDefindexes: Record<string, number> = {
   'knife_widowmaker': 523,
   'knife_skeleton': 525,
   'knife_kukri': 526,
+
+  // Gloves 
+  'bloodhound_gloves': 5027,
+  'sporty_gloves': 5030, // Sport Gloves
+  'slick_gloves': 5031,  // Driver Gloves
+  'leather_handwraps': 5032, // Hand Wraps
+  'motorcycle_gloves': 5033, // Moto Gloves
+  'specialist_gloves': 5034, 
+  'hydra_gloves': 5035,
+  'brokenfang_gloves': 4725,
 };
 
 export const equipWeaponSkin = async (req: Request, res: Response) => {
@@ -83,6 +93,7 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
   }
 
   const isKnife = baseWeaponName.startsWith('knife') || baseWeaponName === 'bayonet';
+  const isGlove = baseWeaponName.includes('gloves') || baseWeaponName.includes('handwraps');
 
   try {
     const skinData = {
@@ -96,7 +107,6 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
 
     const transactions: any[] = [];
 
-    // 🚨 AGORA ELE SÓ FAZ UPSERT NO TIME ESPECÍFICO (t)
     transactions.push(
       prisma.wpPlayerSkins.upsert({
         where: { steamid_weapon_team_weapon_defindex: { steamid: steamIdString, weapon_team: t, weapon_defindex: defindex } },
@@ -116,6 +126,16 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
       );
     }
 
+    if (isGlove) {
+      transactions.push(
+        prisma.wpPlayerGloves.upsert({
+          where: { steamid_weapon_team: { steamid: steamIdString, weapon_team: t } },
+          update: { weapon_defindex: defindex },
+          create: { steamid: steamIdString, weapon_team: t, weapon_defindex: defindex }
+        })
+      );
+    }
+
     await prisma.$transaction(transactions);
     res.json({ success: true, message: isKnife ? "Faca equipada com sucesso!" : "Skin equipada com sucesso!" });
   } catch (error) {
@@ -130,20 +150,37 @@ export const getPlayerInventory = async (req: Request, res: Response) => {
   const steamIdString = String((req.user as any).id);
 
   try {
-    // Busca as skins de AMBOS os times agora (sem o where: { weapon_team: 2 })
+
     const inventoryRaw = await prisma.wpPlayerSkins.findMany({ where: { steamid: steamIdString } });
     const knivesRaw = await prisma.wpPlayerKnife.findMany({ where: { steamid: steamIdString } });
+    const glovesRaw = await prisma.wpPlayerGloves.findMany({ where: { steamid: steamIdString } });
+    const musicRaw = await prisma.wpPlayerMusic.findMany({ where: { steamid: steamIdString } });
 
-    // Mapeia qual faca está ativa para TR (2) e CT (3)
     const activeKnives: Record<number, string> = {};
     knivesRaw.forEach(k => { activeKnives[k.weapon_team] = k.knife; });
+
+    const activeGloves: Record<number, number> = {};
+    glovesRaw.forEach(g => { activeGloves[g.weapon_team] = g.weapon_defindex; });
+
+    const activeMusic: Record<number, number> = {};
+    musicRaw.forEach(m => { activeMusic[m.weapon_team] = m.music_id; });
 
     const reverseDefindexes = Object.fromEntries(Object.entries(weaponDefindexes).map(([k, v]) => [v, k]));
 
     const formattedInventory = inventoryRaw.map(item => {
       const wName = reverseDefindexes[item.weapon_defindex] || `unknown_${item.weapon_defindex}`;
       const isKnife = wName.startsWith('knife') || wName === 'bayonet';
+      const isGlove = wName.includes('gloves') || wName.includes('handwraps');
+      
       const expectedDbName = `weapon_${wName}`;
+
+      let isItemEquipped: boolean | undefined = undefined;
+      
+      if (isKnife) {
+        isItemEquipped = expectedDbName === activeKnives[item.weapon_team];
+      } else if (isGlove) {
+        isItemEquipped = item.weapon_defindex === activeGloves[item.weapon_team];
+      }
 
       return {
         weaponName: wName,
@@ -154,7 +191,7 @@ export const getPlayerInventory = async (req: Request, res: Response) => {
         statTrak: item.weapon_stattrak,
         statTrakCount: item.weapon_stattrak_count,
         nameTag: item.weapon_nametag,
-        isEquipped: isKnife ? (expectedDbName === activeKnives[item.weapon_team]) : undefined,
+        isEquipped: isItemEquipped,
         sticker_0: item.weapon_sticker_0,
         sticker_1: item.weapon_sticker_1,
         sticker_2: item.weapon_sticker_2,
@@ -163,9 +200,39 @@ export const getPlayerInventory = async (req: Request, res: Response) => {
       };
     });
 
-    return res.status(200).json({ success: true, inventory: formattedInventory, stickers: [] });
+    return res.status(200).json({ success: true, inventory: formattedInventory, activeMusic: activeMusic, stickers: [] });
   } catch (error) {
     console.error("Erro ao buscar inventário:", error);
     return res.status(500).json({ success: false, message: "Erro interno no servidor." });
   }
 };
+
+export const equipMusicKit = async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const steamIdString = String((req.user as any).id);
+  const { musicId, team } = req.body;
+
+  if (musicId === undefined || !team) {
+    return res.status(400).json({ error: "Faltam parâmetros (musicId ou team)." });
+  }
+
+  const t = Number(team);
+  const mId = Number(musicId); 
+
+  try {
+    await prisma.wpPlayerMusic.upsert({
+      where: { steamid_weapon_team: { steamid: steamIdString, weapon_team: t } },
+      update: { music_id: mId },
+      create: { steamid: steamIdString, weapon_team: t, music_id: mId }
+    });
+
+    res.json({ success: true, message: "Trilha Sonora equipada com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao equipar Music Kit:", error);
+    res.status(500).json({ error: "Erro interno no servidor ao equipar música." });
+  }
+};
+
