@@ -186,3 +186,37 @@ model WpPlayerPins {
   @@id([steamid, weapon_team])
   @@map("wp_player_pins")
 }
+
+model StorePlayers {
+  id             Int      @id @default(autoincrement())
+  SteamID        BigInt   @unique @db.UnsignedBigInt
+  PlayerName     String?  @db.VarChar(255)
+  Credits        Int
+  DateOfJoin     DateTime @db.DateTime(0)
+  DateOfLastJoin DateTime @db.DateTime(0)
+  Vip            Boolean  
+
+  @@map("store_players")
+}
+
+model StoreItems {
+  id               Int      @id @default(autoincrement())
+  SteamID          BigInt   @db.UnsignedBigInt
+  Price            Int      @db.UnsignedInt
+  Type             String   @db.VarChar(16)
+  UniqueId         String   @db.VarChar(256)
+  DateOfPurchase   DateTime @db.DateTime(0)
+  DateOfExpiration DateTime @db.DateTime(0)
+
+  @@map("store_items")
+}
+
+model StoreEquipments {
+  id       Int    @id @default(autoincrement())
+  SteamID  BigInt @db.UnsignedBigInt
+  Type     String @db.VarChar(16)
+  UniqueId String @db.VarChar(256)
+  Slot     Int?
+
+  @@map("store_equipments")
+}
