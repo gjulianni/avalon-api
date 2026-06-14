@@ -41,6 +41,7 @@ export const getPlayerStoreData = async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const steamIdStr = String((req.user as any).id);
   const steamIdBigInt = BigInt((req.user as any).id);
 
   try {
@@ -49,10 +50,27 @@ export const getPlayerStoreData = async (req: Request, res: Response) => {
       where: { SteamID: steamIdBigInt }
     });
 
-    const credits = playerRecord?.Credits || 0;
+    let credits = playerRecord?.Credits || 0;
     
     const isStoreVip = playerRecord?.Vip === true;
     const lastSession = playerRecord?.DateOfLastJoin || new Date(0);
+
+   const rconResponse = await executeRconAction(steamIdStr, 'credits' as any, 'none');
+    console.log(`Resposta crua do RCON: "${rconResponse}"`);
+
+    const matchRegex = new RegExp(`AVALON_CREDITS_${steamIdStr}:(\\d+)`);
+    const match = rconResponse.match(matchRegex);
+    
+    if (match && match[1]) {
+      const liveCredits = parseInt(match[1]);
+      if (!isNaN(liveCredits)) {
+        credits = liveCredits; 
+        console.log(`Regex encontrou AVALON_CREDITS! Substituindo saldo para a RAM: ${credits}`);
+      }
+    } else {
+      console.log(`Regex FALHOU ou RCON vazio. Mantendo saldo do Banco: ${credits}`);
+    }
+    console.log(`----------------------------\n`);
 
     const purchases = await prisma.storeItems.findMany({
       where: { SteamID: steamIdBigInt },
@@ -82,7 +100,7 @@ export const getPlayerStoreData = async (req: Request, res: Response) => {
 
 export const buyItem = async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Não autorizado.' });
-  
+
   const steamIdStr = String((req.user as any).id);
   const steamIdBigInt = BigInt(steamIdStr);
   const { uniqueId } = req.body;
@@ -96,43 +114,49 @@ export const buyItem = async (req: Request, res: Response) => {
   if (price === 0) return res.status(400).json({ error: 'Itens gratuitos devem ser equipados diretamente.' });
 
   try {
-    const player = await prisma.storePlayers.findUnique({ where: { SteamID: steamIdBigInt } });
-    if (!player) return res.status(404).json({ error: 'Conta não encontrada.' });
-
-    if (player.Credits < price) return res.status(400).json({ error: 'Créditos insuficientes.' });
-    
-    const alreadyOwns = await prisma.storeItems.findFirst({ where: { SteamID: steamIdBigInt, UniqueId: uniqueId } });
-    if (alreadyOwns) return res.status(400).json({ error: 'Você já possui este item.' });
-
-    // 1. TENTA RCON (Jogador Online)
     const rconResponse = await executeRconAction(steamIdStr, 'buy', uniqueId);
-    
-    if (rconResponse.includes('AVALON_SUCCESS')) {
-      return res.status(200).json({ success: true, message: 'Compra feita ao vivo no servidor!' });
-    }
-    
-    if (rconResponse.includes('AVALON_ERROR')) {
-      return res.status(400).json({ error: rconResponse.replace('AVALON_ERROR: ', '') });
+
+   if (rconResponse.includes(`AVALON_SUCCESS_${steamIdStr}`)) {
+      return res.status(200).json({ success: true, message: 'Ao vivo no servidor!' });
     }
 
-    await prisma.$transaction([
-      prisma.storePlayers.update({
-        where: { SteamID: steamIdBigInt },
-        data: { Credits: { decrement: price } }
-      }),
-      prisma.storeItems.create({
-        data: {
-          SteamID: steamIdBigInt,
-          Price: price,
-          Type: itemDef.type || 'playerskin',
-          UniqueId: uniqueId,
-          DateOfPurchase: new Date(),
-          DateOfExpiration: new Date('0001-01-01T00:00:00Z')
-        }
-      })
-    ]);
+    if (rconResponse.includes(`AVALON_ERROR_${steamIdStr}`)) {
 
-    return res.status(200).json({ success: true, message: 'Compra processada no banco de dados.' });
+      const errorMsg = rconResponse.split(`AVALON_ERROR_${steamIdStr}: `)[1] || 'Erro desconhecido.';
+      return res.status(400).json({ error: errorMsg });
+    }
+
+    if (rconResponse.includes('AVALON_OFFLINE') || rconResponse === 'RCON_FAILED') {
+      const player = await prisma.storePlayers.findUnique({ where: { SteamID: steamIdBigInt } });
+      if (!player) return res.status(404).json({ error: 'Conta não encontrada.' });
+
+      if (player.Credits < price) return res.status(400).json({ error: 'Créditos insuficientes no banco de dados.' });
+
+      const alreadyOwns = await prisma.storeItems.findFirst({ where: { SteamID: steamIdBigInt, UniqueId: uniqueId } });
+      if (alreadyOwns) return res.status(400).json({ error: 'Você já possui este item.' });
+
+      await prisma.$transaction([
+        prisma.storePlayers.update({ where: { SteamID: steamIdBigInt }, data: { Credits: { decrement: price } } }),
+        prisma.storeItems.create({
+          data: {
+            SteamID: steamIdBigInt,
+            Price: price,
+            Type: itemDef.type || 'playerskin',
+            UniqueId: uniqueId,
+            DateOfPurchase: new Date(),
+            DateOfExpiration: new Date('0001-01-01T00:00:00Z')
+          }
+        })
+      ]);
+
+      return res.status(200).json({ success: true, message: 'Compra processada no banco de dados.' });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Comando enviado! A resposta demorou, atualize a página para confirmar.' 
+    });
+
   } catch (error) {
     console.error("Erro na compra:", error);
     return res.status(500).json({ error: 'Erro interno ao processar a compra.' });
@@ -169,24 +193,33 @@ export const equipItem = async (req: Request, res: Response) => {
 
     const rconResponse = await executeRconAction(steamIdStr, 'equip', uniqueId);
     
-    if (rconResponse.includes('AVALON_SUCCESS')) {
-      return res.status(200).json({ success: true, message: 'Item equipado ao vivo no servidor!' });
-    }
-    
-    if (rconResponse.includes('AVALON_ERROR')) {
-      return res.status(400).json({ error: rconResponse.replace('AVALON_ERROR: ', '') });
+  if (rconResponse.includes(`AVALON_SUCCESS_${steamIdStr}`)) {
+      return res.status(200).json({ success: true, message: 'Ao vivo no servidor!' });
     }
 
-    await prisma.$transaction([
-      prisma.storeEquipments.deleteMany({
-        where: { SteamID: steamIdBigInt, Type: type, Slot: slot }
-      }),
-      prisma.storeEquipments.create({
-        data: { SteamID: steamIdBigInt, Type: type, UniqueId: uniqueId, Slot: slot }
-      })
-    ]);
+    if (rconResponse.includes(`AVALON_ERROR_${steamIdStr}`)) {
+      const errorMsg = rconResponse.split(`AVALON_ERROR_${steamIdStr}: `)[1] || 'Erro desconhecido.';
+      return res.status(400).json({ error: errorMsg });
+    }
 
-    return res.status(200).json({ success: true, message: 'Item equipado para a próxima sessão.' });
+    if (rconResponse.includes('AVALON_OFFLINE') || rconResponse === 'RCON_FAILED') {
+      await prisma.$transaction([
+        prisma.storeEquipments.deleteMany({
+          where: { SteamID: steamIdBigInt, Type: type, Slot: slot }
+        }),
+        prisma.storeEquipments.create({
+          data: { SteamID: steamIdBigInt, Type: type, UniqueId: uniqueId, Slot: slot }
+        })
+      ]);
+
+      return res.status(200).json({ success: true, message: 'Item equipado para a próxima sessão.' });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Comando de equipar enviado! Atualize a página para confirmar.' 
+    });
+
   } catch (error) {
     console.error("Erro ao equipar:", error);
     return res.status(500).json({ error: 'Erro interno ao equipar o item.' });

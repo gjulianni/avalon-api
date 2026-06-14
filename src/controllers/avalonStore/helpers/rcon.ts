@@ -13,6 +13,8 @@ const executeRconAction = async (steamId: string, action: 'buy' | 'equip', uniqu
     const command = `css_avalon_web_action ${steamId} ${action} ${uniqueId}`;
     const response = await client.execute(command);
     
+    await new Promise(resolve => setTimeout(resolve, 250));
+    
     await client.disconnect();
     
     return response.toString().trim();

@@ -3,7 +3,7 @@
         "provider": "steam",
         "id": "3526817084"
     },
-    "ze_SUMAI_facility_lite": {
+    "ze_sumai_facility_lite": {
         "provider": "steam",
         "id": "3197712518"
     },
@@ -31,7 +31,7 @@
         "provider": "steam",
         "id": "3331937749"
     },
-    "ze_ALIEN_mountain_escape_p": {
+    "ze_alien_mountain_escape_p": {
         "provider": "steam",
         "id": "3145781680"
     },
@@ -39,7 +39,7 @@
         "provider": "steam",
         "id": "3210240252"
     },
-    "ze_Aooka3": {
+    "ze_aooka3": {
         "provider": "steam",
         "id": "3310240982"
     },
@@ -51,7 +51,7 @@
         "provider": "steam",
         "id": "3226680626"
     },
-    "ze_Arcana_Heart": {
+    "ze_arcana_heart": {
         "provider": "steam",
         "id": "3248842358"
     },
@@ -63,11 +63,11 @@
         "provider": "steam",
         "id": "3084697233"
     },
-    "ze_ATIX_apocalypse_p": {
+    "ze_atix_apocalypse_p": {
         "provider": "steam",
         "id": "3087543130"
     },
-    "ze_ATIX_panic_p": {
+    "ze_atix_panic_p": {
         "provider": "steam",
         "id": "3076578445"
     },
@@ -83,11 +83,11 @@
         "provider": "steam",
         "id": "3174524746"
     },
-    "ze_Backrooms_Insomnia": {
+    "ze_backrooms_insomnia": {
         "provider": "steam",
         "id": "3559330245"
     },
-    "ze_Bathroom": {
+    "ze_bathroom": {
         "provider": "steam",
         "id": "3250974096"
     },
@@ -107,7 +107,7 @@
         "provider": "steam",
         "id": "3201834353"
     },
-    "ze_Boatescape_Ultimate": {
+    "ze_boatescape_ultimate": {
         "provider": "steam",
         "id": "3217056098"
     },
@@ -115,11 +115,11 @@
         "provider": "steam",
         "id": "3070281654"
     },
-    "ze_Boatescape888": {
+    "ze_boatescape888": {
         "provider": "steam",
         "id": "3169214837"
     },
-    "ze_Boatescape999": {
+    "ze_boatescape999": {
         "provider": "steam",
         "id": "3280054813"
     },
@@ -171,7 +171,7 @@
         "provider": "steam",
         "id": "3247637204"
     },
-    "ze_Cyberspace": {
+    "ze_cyberspace": {
         "provider": "steam",
         "id": "3357121032"
     },
@@ -179,11 +179,11 @@
         "provider": "steam",
         "id": "3073379342"
     },
-    "ze_Dark_Souls": {
+    "ze_dark_souls": {
         "provider": "steam",
         "id": "3387284574"
     },
-    "ze_Deadcore": {
+    "ze_deadcore": {
         "provider": "steam",
         "id": "3304554968"
     },
@@ -203,7 +203,7 @@
         "provider": "steam",
         "id": "3101174331"
     },
-    "ze_Desperate_Soul": {
+    "ze_desperate_soul": {
         "provider": "steam",
         "id": "3323542208"
     },
@@ -211,7 +211,7 @@
         "provider": "steam",
         "id": "3485132292"
     },
-    "ze_Djinn": {
+    "ze_djinn": {
         "provider": "steam",
         "id": "3363808337"
     },
@@ -219,19 +219,19 @@
         "provider": "steam",
         "id": "3129406884"
     },
-    "ze_Dreamin": {
+    "ze_dreamin": {
         "provider": "steam",
         "id": "3375301835"
     },
-    "ze_DYSTOPIA_p": {
+    "ze_dystopia_p": {
         "provider": "steam",
         "id": "3159658783"
     },
-    "ze_ELEVATOR_escape_p": {
+    "ze_elevator_escape_p": {
         "provider": "steam",
         "id": "3135918205"
     },
-    "ze_Emerald": {
+    "ze_emerald": {
         "provider": "steam",
         "id": "3167475235"
     },
@@ -271,23 +271,23 @@
         "provider": "steam",
         "id": "3310260547"
     },
-    "ze_FFVII_Fako_Reactor": {
+    "ze_ffvii_fako_reactor": {
         "provider": "steam",
         "id": "3136003731"
     },
-    "ze_FFVII_Mako_Reactor_v5_3": {
+    "ze_ffvii_mako_reactor_v5_3": {
         "provider": "steam",
         "id": "3289746748"
     },
-    "ze_FFVII_Mako_Reactor_v6_p": {
+    "ze_ffvii_mako_reactor_v6_p": {
         "provider": "steam",
         "id": "3273375829"
     },
-    "ze_FFVII_Snow_Cosmo": {
+    "ze_ffvii_snow_cosmo": {
         "provider": "steam",
         "id": "3295082384"
     },
-    "ze_FFVII_temple_ancient": {
+    "ze_ffvii_temple_ancient": {
         "provider": "steam",
         "id": "3340741299"
     },
@@ -295,7 +295,7 @@
         "provider": "steam",
         "id": "3270937493"
     },
-    "ze_FFXII_Paramina_Rift": {
+    "ze_ffxii_paramina_rift": {
         "provider": "steam",
         "id": "3353405580"
     },
@@ -303,11 +303,11 @@
         "provider": "steam",
         "id": "3236270292"
     },
-    "ze_FFXII_Westersand_v8": {
+    "ze_ffxii_westersand_v8": {
         "provider": "steam",
         "id": "3344357687"
     },
-    "ze_FFXIV_Reisen_Temple": {
+    "ze_ffxiv_reisen_temple": {
         "provider": "steam",
         "id": "3220221743"
     },
@@ -327,11 +327,11 @@
         "provider": "steam",
         "id": "3318263833"
     },
-    "ze_FORiUS_just_RUN_p": {
+    "ze_forius_just_run_p": {
         "provider": "steam",
         "id": "3173196031"
     },
-    "ze_Forsaken_Temple": {
+    "ze_forsaken_temple": {
         "provider": "steam",
         "id": "3247462748"
     },
@@ -339,7 +339,7 @@
         "provider": "steam",
         "id": "3120465300"
     },
-    "ze_Frozen_Abyss": {
+    "ze_frozen_abyss": {
         "provider": "steam",
         "id": "3361357611"
     },
@@ -383,7 +383,7 @@
         "provider": "steam",
         "id": "3090239773"
     },
-    "ze_Hydroponic_Garden": {
+    "ze_hydroponic_garden": {
         "provider": "steam",
         "id": "3265261614"
     },
@@ -411,7 +411,7 @@
         "provider": "steam",
         "id": "3169700716"
     },
-    "ze_Industrial_Dejavu": {
+    "ze_industrial_dejavu": {
         "provider": "steam",
         "id": "3303378356"
     },
@@ -451,7 +451,7 @@
         "provider": "steam",
         "id": "3240966394"
     },
-    "ze_Last_Man_Standing_p": {
+    "ze_last_man_standing_p": {
         "provider": "steam",
         "id": "3353304489"
     },
@@ -471,27 +471,27 @@
         "provider": "steam",
         "id": "3214940342"
     },
-    "ze_LOTR_Helms_Deep_p": {
+    "ze_lotr_helms_deep_p": {
         "provider": "steam",
         "id": "3182611588"
     },
-    "ze_LOTR_Isengard": {
+    "ze_lotr_isengard": {
         "provider": "steam",
         "id": "3133242053"
     },
-    "ze_LOTR_Minas_Tirith_p": {
+    "ze_lotr_minas_tirith_p": {
         "provider": "steam",
         "id": "3314560349"
     },
-    "ze_LOTR_Mines_of_Moria_p": {
+    "ze_lotr_mines_of_moria_p": {
         "provider": "steam",
         "id": "3220471698"
     },
-    "ze_LOTR_Mirkwood_p": {
+    "ze_lotr_mirkwood_p": {
         "provider": "steam",
         "id": "3199590006"
     },
-    "ze_LOTR_Mount_Doom_p": {
+    "ze_lotr_mount_doom_p": {
         "provider": "steam",
         "id": "3266739716"
     },
@@ -535,7 +535,7 @@
         "provider": "steam",
         "id": "3184013959"
     },
-    "ze_Minimal": {
+    "ze_minimal": {
         "provider": "steam",
         "id": "3381264138"
     },
@@ -547,7 +547,7 @@
         "provider": "steam",
         "id": "3277173545"
     },
-    "ze_MiSide": {
+    "ze_miside": {
         "provider": "steam",
         "id": "3432667287"
     },
@@ -559,15 +559,15 @@
         "provider": "steam",
         "id": "3268041581"
     },
-    "ze_MORELL_April_Vacation_p": {
+    "ze_morell_april_vacation_p": {
         "provider": "steam",
         "id": "3208765636"
     },
-    "ze_Mountain_Escape_Snow": {
+    "ze_mountain_escape_snow": {
         "provider": "steam",
         "id": "3324156583"
     },
-    "ze_Mountain_Ultimate": {
+    "ze_mountain_ultimate": {
         "provider": "steam",
         "id": "3495926739"
     },
@@ -583,7 +583,7 @@
         "provider": "steam",
         "id": "3295495749"
     },
-    "ze_NewYork_escape_p": {
+    "ze_newyork_escape_p": {
         "provider": "steam",
         "id": "3153952411"
     },
@@ -603,11 +603,11 @@
         "provider": "steam",
         "id": "3209599928"
     },
-    "ze_Obf_Insane": {
+    "ze_obf_insane": {
         "provider": "steam",
         "id": "3310660027"
     },
-    "ze_Obf_NPST_v2": {
+    "ze_obf_npst_v2": {
         "provider": "steam",
         "id": "3348665019"
     },
@@ -647,7 +647,7 @@
         "provider": "steam",
         "id": "3364323435"
     },
-    "ze_Otakuroom": {
+    "ze_otakuroom": {
         "provider": "steam",
         "id": "3128321209"
     },
@@ -679,7 +679,7 @@
         "provider": "steam",
         "id": "3139639057"
     },
-    "ze_Pirates_Port_Royal": {
+    "ze_pirates_port_royal": {
         "provider": "steam",
         "id": "3381572627"
     },
@@ -703,7 +703,7 @@
         "provider": "steam",
         "id": "3552194255"
     },
-    "ze_PoR_island_p": {
+    "ze_por_island_p": {
         "provider": "steam",
         "id": "3071483803"
     },
@@ -711,7 +711,7 @@
         "provider": "steam",
         "id": "3218547242"
     },
-    "ze_PotC_p": {
+    "ze_potc_p": {
         "provider": "steam",
         "id": "3084219587"
     },
@@ -723,7 +723,7 @@
         "provider": "steam",
         "id": "3128279930"
     },
-    "ze_PUTA_p": {
+    "ze_puta_p": {
         "provider": "steam",
         "id": "3078006878"
     },
@@ -743,7 +743,7 @@
         "provider": "steam",
         "id": "3258064134"
     },
-    "ze_Requiem": {
+    "ze_requiem": {
         "provider": "steam",
         "id": "3134550710"
     },
@@ -775,7 +775,7 @@
         "provider": "steam",
         "id": "3588414134"
     },
-    "ze_S_A_M": {
+    "ze_s_a_m": {
         "provider": "steam",
         "id": "3217227843"
     },
@@ -799,7 +799,7 @@
         "provider": "steam",
         "id": "3175004434"
     },
-    "ze_Serpentis_Temple": {
+    "ze_serpentis_temple": {
         "provider": "steam",
         "id": "3357015378"
     },
@@ -811,15 +811,15 @@
         "provider": "steam",
         "id": "3149203270"
     },
-    "ze_ShroomForest_p": {
+    "ze_shroomforest_p": {
         "provider": "steam",
         "id": "3212196068"
     },
-    "ze_ShroomForest2_p": {
+    "ze_shroomforest2_p": {
         "provider": "steam",
         "id": "3258673372"
     },
-    "ze_ShroomForest3_p": {
+    "ze_shroomforest3_p": {
         "provider": "steam",
         "id": "3352275561"
     },
@@ -827,11 +827,11 @@
         "provider": "steam",
         "id": "3241013638"
     },
-    "ze_silent_hill_2_illusion_XYY": {
+    "ze_silent_hill_2_illusion_xyy": {
         "provider": "steam",
         "id": "3272284666"
     },
-    "ze_silent_hill_blackblood_XYY": {
+    "ze_silent_hill_blackblood_xyy": {
         "provider": "steam",
         "id": "3267382742"
     },
@@ -883,7 +883,7 @@
         "provider": "steam",
         "id": "3123260164"
     },
-    "ze_Steyliff_Grove": {
+    "ze_steyliff_grove": {
         "provider": "steam",
         "id": "3304076935"
     },
@@ -891,7 +891,7 @@
         "provider": "steam",
         "id": "3362061557"
     },
-    "ze_STRANGE_escape_p": {
+    "ze_strange_escape_p": {
         "provider": "steam",
         "id": "3098739829"
     },
@@ -923,7 +923,7 @@
         "provider": "steam",
         "id": "3105755546"
     },
-    "ze_TESV_Skyrim_p": {
+    "ze_tesv_skyrim_p": {
         "provider": "steam",
         "id": "3242492031"
     },
@@ -947,7 +947,7 @@
         "provider": "steam",
         "id": "3367711562"
     },
-    "ze_Totemo_Roka_p": {
+    "ze_totemo_roka_p": {
         "provider": "steam",
         "id": "3096674083"
     },
@@ -963,11 +963,11 @@
         "provider": "steam",
         "id": "3083693391"
     },
-    "ze_Tyranny": {
+    "ze_tyranny": {
         "provider": "steam",
         "id": "3345284992"
     },
-    "ze_Uchiha_Legacy": {
+    "ze_uchiha_legacy": {
         "provider": "steam",
         "id": "3278140812"
     },
@@ -999,7 +999,7 @@
         "provider": "steam",
         "id": "3193837246"
     },
-    "ze_Visualizer": {
+    "ze_visualizer": {
         "provider": "steam",
         "id": "3257332702"
     },
@@ -1019,7 +1019,7 @@
         "provider": "steam",
         "id": "3299009552"
     },
-    "ze_Zertinan": {
+    "ze_zertinan": {
         "provider": "steam",
         "id": "3271367553"
     },
@@ -1047,7 +1047,7 @@
         "provider": "steam",
         "id": "3555222611"
     },
-    "ze_Evernight": {
+    "ze_evernight": {
         "provider": "steam",
         "id": "3554293383"
     },
@@ -1083,7 +1083,7 @@
         "provider": "steam",
         "id": "3472980350"
     },
-    "ze_FFXIV_Wanderers_Palace_v6_2": {
+    "ze_ffxiv_wanderers_palace_v6_2": {
         "provider": "steam",
         "id": "3459109250"
     },
@@ -1091,7 +1091,7 @@
         "provider": "steam",
         "id": "3453518918"
     },
-    "ze_FFXIV_Wanderers_Palace": {
+    "ze_ffxiv_wanderers_palace": {
         "provider": "steam",
         "id": "3453060884"
     },
@@ -1115,11 +1115,11 @@
         "provider": "steam",
         "id": "3389982625"
     },
-    "ze_Squid_Game": {
+    "ze_squid_game": {
         "provider": "steam",
         "id": "3390192395"
     },
-    "ze_Tyranny2": {
+    "ze_tyranny2": {
         "provider": "steam",
         "id": "3381888563"
     },
