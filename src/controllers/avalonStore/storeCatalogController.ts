@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../database/index';
 import findItemByUniqueId from './helpers/findByUniqueId';
+import executeRconAction from './helpers/rcon';
 
 export let globalStoreCatalog: any = null;
 
@@ -81,39 +82,38 @@ export const getPlayerStoreData = async (req: Request, res: Response) => {
 
 export const buyItem = async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Não autorizado.' });
-
-  const steamIdBigInt = BigInt((req.user as any).id);
+  
+  const steamIdStr = String((req.user as any).id);
+  const steamIdBigInt = BigInt(steamIdStr);
   const { uniqueId } = req.body;
 
-  if (!globalStoreCatalog) return res.status(503).json({ error: 'Catálogo não sincronizado.' });
+  if (!globalStoreCatalog) return res.status(503).json({ error: 'Loja indisponível no momento.' });
 
-  // 1. Acha o item no catálogo em memória
   const itemDef = findItemByUniqueId(globalStoreCatalog.Items, uniqueId);
   if (!itemDef) return res.status(404).json({ error: 'Item não encontrado no catálogo.' });
 
   const price = parseInt(itemDef.price || '0');
-  
-  if (price === 0) {
-    return res.status(400).json({ error: 'Itens gratuitos devem ser equipados diretamente.' });
-  }
+  if (price === 0) return res.status(400).json({ error: 'Itens gratuitos devem ser equipados diretamente.' });
 
   try {
     const player = await prisma.storePlayers.findUnique({ where: { SteamID: steamIdBigInt } });
-    if (!player) return res.status(404).json({ error: 'Conta de jogador não encontrada.' });
+    if (!player) return res.status(404).json({ error: 'Conta não encontrada.' });
 
-
-    if (player.Credits < price) {
-      return res.status(400).json({ error: 'Créditos insuficientes.' });
-    }
-    const isVipOnly = itemDef.flag?.includes('@css/reservation');
-    if (isVipOnly && player.Vip === false) {
-      return res.status(403).json({ error: 'Item exclusivo para VIPs.' });
-    }
-
-    const alreadyOwns = await prisma.storeItems.findFirst({
-      where: { SteamID: steamIdBigInt, UniqueId: uniqueId }
-    });
+    if (player.Credits < price) return res.status(400).json({ error: 'Créditos insuficientes.' });
+    
+    const alreadyOwns = await prisma.storeItems.findFirst({ where: { SteamID: steamIdBigInt, UniqueId: uniqueId } });
     if (alreadyOwns) return res.status(400).json({ error: 'Você já possui este item.' });
+
+    // 1. TENTA RCON (Jogador Online)
+    const rconResponse = await executeRconAction(steamIdStr, 'buy', uniqueId);
+    
+    if (rconResponse.includes('AVALON_SUCCESS')) {
+      return res.status(200).json({ success: true, message: 'Compra feita ao vivo no servidor!' });
+    }
+    
+    if (rconResponse.includes('AVALON_ERROR')) {
+      return res.status(400).json({ error: rconResponse.replace('AVALON_ERROR: ', '') });
+    }
 
     await prisma.$transaction([
       prisma.storePlayers.update({
@@ -127,12 +127,12 @@ export const buyItem = async (req: Request, res: Response) => {
           Type: itemDef.type || 'playerskin',
           UniqueId: uniqueId,
           DateOfPurchase: new Date(),
-          DateOfExpiration: new Date('0001-01-01T00:00:00Z') 
+          DateOfExpiration: new Date('0001-01-01T00:00:00Z')
         }
       })
     ]);
 
-    return res.status(200).json({ success: true, message: 'Compra realizada com sucesso!' });
+    return res.status(200).json({ success: true, message: 'Compra processada no banco de dados.' });
   } catch (error) {
     console.error("Erro na compra:", error);
     return res.status(500).json({ error: 'Erro interno ao processar a compra.' });
@@ -142,10 +142,11 @@ export const buyItem = async (req: Request, res: Response) => {
 export const equipItem = async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Não autorizado.' });
 
-  const steamIdBigInt = BigInt((req.user as any).id);
+  const steamIdStr = String((req.user as any).id);
+  const steamIdBigInt = BigInt(steamIdStr);
   const { uniqueId } = req.body;
 
-  if (!globalStoreCatalog) return res.status(503).json({ error: 'Catálogo não sincronizado.' });
+  if (!globalStoreCatalog) return res.status(503).json({ error: 'Loja indisponível no momento.' });
 
   const itemDef = findItemByUniqueId(globalStoreCatalog.Items, uniqueId);
   if (!itemDef) return res.status(404).json({ error: 'Item não encontrado no catálogo.' });
@@ -156,41 +157,36 @@ export const equipItem = async (req: Request, res: Response) => {
 
   try {
     const isVipOnly = itemDef.flag?.includes('@css/reservation');
-    const isAdminOnly = itemDef.flag?.includes('@css/ban');
-    
-    if (isVipOnly || isAdminOnly) {
+    if (isVipOnly) {
       const player = await prisma.storePlayers.findUnique({ where: { SteamID: steamIdBigInt } });
-      if (!player || (isVipOnly && !player.Vip)) {
-        return res.status(403).json({ error: 'Sem permissão para equipar este item.' });
-      }
+      if (!player || !player.Vip) return res.status(403).json({ error: 'Apenas VIPs podem equipar isto.' });
     }
 
     if (price > 0) {
-      const ownsItem = await prisma.storeItems.findFirst({
-        where: { SteamID: steamIdBigInt, UniqueId: uniqueId }
-      });
+      const ownsItem = await prisma.storeItems.findFirst({ where: { SteamID: steamIdBigInt, UniqueId: uniqueId } });
       if (!ownsItem) return res.status(403).json({ error: 'Você precisa comprar este item primeiro.' });
+    }
+
+    const rconResponse = await executeRconAction(steamIdStr, 'equip', uniqueId);
+    
+    if (rconResponse.includes('AVALON_SUCCESS')) {
+      return res.status(200).json({ success: true, message: 'Item equipado ao vivo no servidor!' });
+    }
+    
+    if (rconResponse.includes('AVALON_ERROR')) {
+      return res.status(400).json({ error: rconResponse.replace('AVALON_ERROR: ', '') });
     }
 
     await prisma.$transaction([
       prisma.storeEquipments.deleteMany({
-        where: { 
-          SteamID: steamIdBigInt, 
-          Type: type,
-          Slot: slot
-        }
+        where: { SteamID: steamIdBigInt, Type: type, Slot: slot }
       }),
       prisma.storeEquipments.create({
-        data: {
-          SteamID: steamIdBigInt,
-          Type: type,
-          UniqueId: uniqueId,
-          Slot: slot
-        }
+        data: { SteamID: steamIdBigInt, Type: type, UniqueId: uniqueId, Slot: slot }
       })
     ]);
 
-    return res.status(200).json({ success: true, message: 'Item equipado com sucesso!' });
+    return res.status(200).json({ success: true, message: 'Item equipado para a próxima sessão.' });
   } catch (error) {
     console.error("Erro ao equipar:", error);
     return res.status(500).json({ error: 'Erro interno ao equipar o item.' });
