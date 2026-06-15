@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../database';
+import executeRconAction from './avalonStore/helpers/rcon';
 
 const weaponDefindexes: Record<string, number> = {
   // Pistols
@@ -87,7 +88,7 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
 
   const baseWeaponName = String(weaponName).replace('weapon_', '');
   const defindex = weaponDefindexes[baseWeaponName];
-  
+
   if (!defindex) {
     return res.status(400).json({ error: `Arma não suportada: ${baseWeaponName}` });
   }
@@ -137,6 +138,11 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
     }
 
     await prisma.$transaction(transactions);
+    try {
+      await executeRconAction(steamIdString, 'wp_refresh', 'none');
+    } catch (rconErr) {
+      console.error("Aviso: Falha ao recarregar a arma no jogo", rconErr);
+    }
     res.json({ success: true, message: isKnife ? "Faca equipada com sucesso!" : "Skin equipada com sucesso!" });
   } catch (error) {
     console.error("Erro ao equipar skin:", error);
