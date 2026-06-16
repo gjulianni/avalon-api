@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../../database/index';
 import findItemByUniqueId from './helpers/findByUniqueId';
 import executeRconAction from './helpers/rcon';
+import convertSteamID from '../../helpers/convertSteamID';
 
 export let globalStoreCatalog: any = null;
 
@@ -44,15 +45,21 @@ export const getPlayerStoreData = async (req: Request, res: Response) => {
   const steamIdStr = String((req.user as any).id);
   const steamIdBigInt = BigInt((req.user as any).id);
 
+  const converted = convertSteamID(steamIdStr);
+
   try {
  
     const playerRecord = await prisma.storePlayers.findUnique({
       where: { SteamID: steamIdBigInt }
     });
+    const vipRecord = await prisma.vipOrder.findFirst({
+      where: { steamId: converted },
+      orderBy: { expiresAt: 'desc' }
+    });
 
     let credits = playerRecord?.Credits || 0;
     
-    const isStoreVip = playerRecord?.Vip === true;
+    const isStoreVip = !!vipRecord;
     const lastSession = playerRecord?.DateOfLastJoin || new Date(0);
 
    const rconResponse = await executeRconAction(steamIdStr, 'credits' as any, 'none');
