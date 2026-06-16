@@ -45,8 +45,9 @@ router.post('/centralcart', async (req: Request, res: Response): Promise<void> =
   console.log('--- [DEBUG] Verificando Evento:', event);
 
   const orderId = String(data?.internal_id || data?.order_id || data?.id);
-
+  console.log(`\n[DEBUG WEBHOOK] 1. Recebeu ${event} para o pedido ${orderId}`);
   if (orderId && data?.status) {
+    console.log(`[DEBUG WEBHOOK] 2. Fazendo Upsert para ${orderId} com status ${data.status}`);
     try {
       await prisma.order.upsert({
         where: { id: orderId },
@@ -64,10 +65,12 @@ router.post('/centralcart', async (req: Request, res: Response): Promise<void> =
 
   if (event === 'ORDER_APPROVED') {
     try {
+      console.log(`[DEBUG WEBHOOK] 3. Chamando processApprovedOrder...`);
       await processApprovedOrder(orderId, data);
+      console.log(`[DEBUG WEBHOOK] 4. Sucesso!`);
       console.log(`[WEBHOOK SUCESSO] VIP processado pelo Helper para o pedido ${orderId}`);
     } catch (error) {
-      console.error('[WEBHOOK ERRO] Falha ao processar helper:', error);
+     console.error('[DEBUG WEBHOOK ERRO] Falha ao processar helper:', error);
     }
   } else {
     console.log(`--- [DEBUG] Evento diferente de aprovado recebido: ${event}`);

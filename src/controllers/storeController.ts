@@ -239,6 +239,7 @@ export const checkout = async (
     });
 
     const raw: any = await response.json();
+    console.log("\n[DEBUG CHECKOUT] 1. Resposta da CentralCart:", JSON.stringify(raw));
 
     if (!response.ok) {
       console.error("ERRO CENTRALCART:", JSON.stringify(raw, null, 2));
@@ -256,6 +257,7 @@ export const checkout = async (
 
     if (raw.order_id) {
       const initialStatus = raw.status || 'PENDING';
+      console.log(`[DEBUG CHECKOUT] 2. ID do Pedido: ${raw.order_id} | Status Inicial: ${initialStatus}`);
       await prisma.order.upsert({
         where: { id: raw.order_id },
         update: {},
@@ -271,6 +273,7 @@ export const checkout = async (
       });
 
       if (initialStatus === 'APPROVED') {
+        console.log(`[DEBUG CHECKOUT] 3. Entrou no bloco initialStatus === 'APPROVED'`);
         try {
           const ccResponse = await fetch(`${CC_API}/app/order/${raw.order_id}`, {
             method: 'GET',
@@ -279,17 +282,24 @@ export const checkout = async (
               'Authorization': `Bearer ${process.env.CENTRALCART_API_TOKEN}`,
             },
           });
+          console.log(`[DEBUG CHECKOUT] 4. ccResponse status: ${ccResponse.status} | ok: ${ccResponse.ok}`);
           
           if (ccResponse.ok) {
             const fullRemoteOrder: any = await ccResponse.json();
+            console.log(`[DEBUG CHECKOUT] 5. Chamando processApprovedOrder...`);
             await processApprovedOrder(raw.order_id, fullRemoteOrder);
+            console.log(`[DEBUG CHECKOUT] 6. processApprovedOrder finalizado com sucesso!`);
+          } else {
+            const errText = await ccResponse.text();
+            console.error(`[Loja - Crash Silencioso] Falha ao buscar detalhes do pedido ${raw.order_id}. Status: ${ccResponse.status} | Detalhes: ${errText}`);
           }
-        } catch (err) {
-          console.error("Erro ao processar aprovação instantânea no checkout:", err);
+  } catch (err) {
+          console.error("[DEBUG CHECKOUT ERRO] Catch estourou:", err);
         }
+      } else {
+        console.log(`[DEBUG CHECKOUT] -> O status não era APPROVED, ignorando entrega instantânea.`);
       }
     }
-
     res.json({
       checkoutUrl: finalUrl,
       pixCode: raw.pix_code,
