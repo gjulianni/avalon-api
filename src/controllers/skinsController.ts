@@ -86,6 +86,27 @@ export const equipWeaponSkin = async (req: Request, res: Response) => {
 
   const t = Number(team);
 
+  if (weaponName === 'remove_gloves') {
+    try {
+      await prisma.wpPlayerGloves.upsert({
+        where: { steamid_weapon_team: { steamid: steamIdString, weapon_team: t } },
+        update: { weapon_defindex: 0 },
+        create: { steamid: steamIdString, weapon_team: t, weapon_defindex: 0 }
+      });
+      
+      try {
+        await executeRconAction(steamIdString, 'wp_refresh', 'none');
+      } catch (rconErr) {
+        console.error("Aviso: Falha ao recarregar a arma no jogo", rconErr);
+      }
+
+      return res.json({ success: true, message: "Mãos padrão equipadas com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao remover luvas:", error);
+      return res.status(500).json({ error: "Erro interno no servidor." });
+    }
+  }
+
   const baseWeaponName = String(weaponName).replace('weapon_', '');
   const defindex = weaponDefindexes[baseWeaponName];
 
