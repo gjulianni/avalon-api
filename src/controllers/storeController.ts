@@ -279,7 +279,7 @@ export const checkout = async (
             method: 'GET',
             headers: {
               ...webstoreHeaders(),
-              'Authorization': `Bearer ${process.env.CENTRALCART_API_TOKEN}`,
+              'Authorization': `Bearer ${process.env.CENTRALCART_API_KEY}`,
             },
           });
           console.log(`[DEBUG CHECKOUT] 4. ccResponse status: ${ccResponse.status} | ok: ${ccResponse.ok}`);
