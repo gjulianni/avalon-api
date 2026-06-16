@@ -175,6 +175,7 @@ export const equipItem = async (req: Request, res: Response) => {
 
   const steamIdStr = String((req.user as any).id);
   const steamIdBigInt = BigInt(steamIdStr);
+  const converted = convertSteamID(steamIdStr);
   const { uniqueId } = req.body;
 
   if (!globalStoreCatalog) return res.status(503).json({ error: 'Loja indisponível no momento.' });
@@ -189,8 +190,8 @@ export const equipItem = async (req: Request, res: Response) => {
   try {
     const isVipOnly = itemDef.flag?.includes('@css/reservation');
     if (isVipOnly) {
-      const player = await prisma.storePlayers.findUnique({ where: { SteamID: steamIdBigInt } });
-      if (!player || !player.Vip) return res.status(403).json({ error: 'Apenas VIPs podem equipar isto.' });
+      const player = await prisma.vipOrder.findFirst({ where: { steamId: converted } });
+      if (!player) return res.status(403).json({ error: 'Apenas VIPs podem equipar isto.' });
     }
 
     if (price > 0) {
