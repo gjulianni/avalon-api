@@ -1,8 +1,12 @@
 import { vipGroupMap } from "../controllers/webhookController";
 import { prisma } from "../database";
+import executeRconAction from "../controllers/avalonStore/helpers/rcon";
+import convertSteam2ToSteam64 from "../controllers/avalonStore/helpers/converters/steam2To64";
 
 export const processApprovedOrder = async (dbOrderId: string, remoteOrder: any) => {
-  const steamId = remoteOrder.client_identifier;
+  const steamId2 = remoteOrder.client_identifier; 
+  const steamId64 = convertSteam2ToSteam64(steamId2);
+  const steamIdBigInt = BigInt(steamId64);
 
   let totalDays = 0;
   let targetGroup = 'vip1';
@@ -32,15 +36,29 @@ export const processApprovedOrder = async (dbOrderId: string, remoteOrder: any) 
 
   await prisma.vipOrder.create({
     data: {
-      steamId: steamId,
+      steamId: steamId2,
       vipGroup: targetGroup,
       status: "ACTIVE",
       durationDays: totalDays, 
       expiresAt: expiresAt,
-      notifiedAdd: false,
+      notifiedAdd: true, 
       notifiedDel: false
     }
   });
 
-  console.log(`[Loja] Pedido ${dbOrderId} aprovado! VIP de ${totalDays} dias gerado para ${steamId}.`);
+
+  try {
+    await prisma.storePlayers.updateMany({
+      where: { SteamID: steamIdBigInt },
+      data: { Vip: true } 
+    });
+
+    const rconCommand = `css_vip_adduser ${steamId64} ${targetGroup} ${totalDays}`;
+    
+    await executeRconAction(steamId64, 'raw', rconCommand); 
+
+    console.log(`[Loja] Sucesso! Pedido ${dbOrderId} processado. VIP de ${totalDays} dias gerado para o ID ${steamId64} (Grupo: ${targetGroup}).`);
+  } catch (error) {
+    console.error(`[Loja] Falha crítica ao tentar sincronizar VIP in-game para ${steamId64}:`, error);
+  }
 };

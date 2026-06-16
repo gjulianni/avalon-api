@@ -1,6 +1,6 @@
 import Rcon from 'rcon-srcds';
 
-const executeRconAction = async (steamId: string, action: 'buy' | 'equip' | 'credits' | 'wp_refresh', uniqueId: string): Promise<string> => {
+const executeRconAction = async (steamId: string, action: 'buy' | 'equip' | 'credits' | 'wp_refresh' | 'raw', uniqueId: string): Promise<string> => {
   try {
     const client = new Rcon({
       host: process.env.RCON_HOST || '',
@@ -13,6 +13,8 @@ const executeRconAction = async (steamId: string, action: 'buy' | 'equip' | 'cre
     let command = '';
     if (action === 'wp_refresh') {
       command = `css_avalon_wp_refresh ${steamId}`; 
+    } else if (action === 'raw') {
+      command = uniqueId;
     } else {
       command = `css_avalon_web_action ${steamId} ${action} ${uniqueId}`;
     }
