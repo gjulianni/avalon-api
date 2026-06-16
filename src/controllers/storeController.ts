@@ -249,7 +249,10 @@ export const checkout = async (
       return;
     }
 
-    const finalUrl = raw.checkout_url || raw.return_url;
+    let finalUrl = raw.checkout_url || raw.return_url;
+    if (finalUrl && finalUrl.includes('.centralcart.com.br')) {
+      finalUrl = finalUrl.replace('.centralcart.com.br', '.centralcart.ai');
+    }
 
     if (raw.order_id) {
       const initialStatus = raw.status || 'PENDING';

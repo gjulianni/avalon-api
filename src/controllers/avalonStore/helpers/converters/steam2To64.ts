@@ -1,4 +1,6 @@
 const convertSteam2ToSteam64 = (steamId2: string): string => {
+
+  if (!steamId2) return "";
   if (!steamId2.startsWith('STEAM_')) return steamId2; 
   const parts = steamId2.split(':');
   if (parts.length !== 3) return steamId2;

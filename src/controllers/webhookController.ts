@@ -46,17 +46,6 @@ router.post('/centralcart', async (req: Request, res: Response): Promise<void> =
 
   const orderId = String(data?.internal_id || data?.order_id || data?.id);
 
-  if (event === 'ORDER_APPROVED') {
-    try {
-      await processApprovedOrder(orderId, data);
-      console.log(`[WEBHOOK SUCESSO] VIP processado pelo Helper para o pedido ${orderId}`);
-    } catch (error) {
-      console.error('[WEBHOOK ERRO] Falha ao processar helper:', error);
-    }
-  } else {
-    console.log(`--- [DEBUG] Evento diferente de aprovado recebido: ${event}`);
-  }
-
   if (orderId && data?.status) {
     try {
       await prisma.order.upsert({
@@ -69,8 +58,19 @@ router.post('/centralcart', async (req: Request, res: Response): Promise<void> =
         }
       });
     } catch (dbError) {
-      console.error(dbError);
+      console.error("Erro ao registrar pedido via webhook:", dbError);
     }
+  }
+
+  if (event === 'ORDER_APPROVED') {
+    try {
+      await processApprovedOrder(orderId, data);
+      console.log(`[WEBHOOK SUCESSO] VIP processado pelo Helper para o pedido ${orderId}`);
+    } catch (error) {
+      console.error('[WEBHOOK ERRO] Falha ao processar helper:', error);
+    }
+  } else {
+    console.log(`--- [DEBUG] Evento diferente de aprovado recebido: ${event}`);
   }
 
   res.status(200).send('OK');
