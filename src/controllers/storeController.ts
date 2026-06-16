@@ -272,33 +272,7 @@ export const checkout = async (
         },
       });
 
-      if (initialStatus === 'APPROVED') {
-        console.log(`[DEBUG CHECKOUT] 3. Entrou no bloco initialStatus === 'APPROVED'`);
-        try {
-          const ccResponse = await fetch(`${CC_API}/app/order/${raw.order_id}`, {
-            method: 'GET',
-            headers: {
-              ...webstoreHeaders(),
-              'Authorization': `Bearer ${process.env.CENTRALCART_API_KEY}`,
-            },
-          });
-          console.log(`[DEBUG CHECKOUT] 4. ccResponse status: ${ccResponse.status} | ok: ${ccResponse.ok}`);
-          
-          if (ccResponse.ok) {
-            const fullRemoteOrder: any = await ccResponse.json();
-            console.log(`[DEBUG CHECKOUT] 5. Chamando processApprovedOrder...`);
-            await processApprovedOrder(raw.order_id, fullRemoteOrder);
-            console.log(`[DEBUG CHECKOUT] 6. processApprovedOrder finalizado com sucesso!`);
-          } else {
-            const errText = await ccResponse.text();
-            console.error(`[Loja - Crash Silencioso] Falha ao buscar detalhes do pedido ${raw.order_id}. Status: ${ccResponse.status} | Detalhes: ${errText}`);
-          }
-  } catch (err) {
-          console.error("[DEBUG CHECKOUT ERRO] Catch estourou:", err);
-        }
-      } else {
-        console.log(`[DEBUG CHECKOUT] -> O status não era APPROVED, ignorando entrega instantânea.`);
-      }
+      console.log(`[CHECKOUT] 3. Pedido registrado no banco de dados com sucesso.`);
     }
     res.json({
       checkoutUrl: finalUrl,
