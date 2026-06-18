@@ -1126,5 +1126,133 @@
     "ze_necromanteion_p": {
         "provider": "steam",
         "id": "3659233822"
+    },
+    "ze_best_korea_p": {
+        "provider": "steam",
+        "id": "3683711921"
+    },
+    "ze_a_e_s_t_h_e_t_i_c_p": {
+        "provider": "steam",
+        "id": "3675161520"
+    },
+    "ze_ffxii_mt_bur_omisace_v6": {
+        "provider": "steam",
+        "id": "3398706540"
+    },
+    "ze_kitchen": {
+        "provider": "steam",
+        "id": "3738689206"
+    },
+    "ze_resident_evil_3": {
+        "provider": "steam",
+        "id": "3722688576"
+    },
+    "ze_uyuni": {
+        "provider": "steam",
+        "id": "3726895370"
+    },
+    "ze_no_name_v2_3": {
+        "provider": "steam",
+        "id": "3725762233"
+    },
+    "ze_my_first_ze_map_p": {
+        "provider": "steam",
+        "id": "3721027849"
+    },
+    "ze_atos": {
+        "provider": "steam",
+        "id": "3691959849"
+    },
+    "ze_tranquility": {
+        "provider": "steam",
+        "id": "3707338750"
+    },
+    "ze_hr_dead_center": {
+        "provider": "steam",
+        "id": "3659211427"
+    },
+    "ze_ffxiv_great_gubal_library": {
+        "provider": "steam",
+        "id": "3373306757"
+    },
+    "ze_kebab_immigrant": {
+        "provider": "steam",
+        "id": "3464430150"
+    },
+    "ze_samosbor": {
+        "provider": "steam",
+        "id": "3558923245"
+    },
+    "ze_skill_escape_xmas": {
+        "provider": "steam",
+        "id": "3630315660"
+    },
+    "ze_toggle_theory": {
+        "provider": "steam",
+        "id": "3551455108"
+    },
+    "ze_downstairs": {
+        "provider": "steam",
+        "id": "3559557611"
+    },
+    "ze_ultrakill": {
+        "provider": "steam",
+        "id": "3455771581"
+    },
+    "ze_minecraft_dragon_castle": {
+        "provider": "steam",
+        "id": "3427386217"
+    },
+    "ze_eternal_grove": {
+        "provider": "steam",
+        "id": "3721723096"
+    },
+    "ze_mochi_island": {
+        "provider": "steam",
+        "id": "3370830254"
+    },
+    "ze_rainbow_factory": {
+        "provider": "steam",
+        "id": "3472829484"
+    },
+    "ze_death_forest": {
+        "provider": "steam",
+        "id": "3546897103"
+    },
+    "ze_toy_world_final": {
+        "provider": "steam",
+        "id": "3269254804"
+    },
+    "ze_rawnscape_p": {
+        "provider": "steam",
+        "id": "3638904786"
+    },
+    "ze_avalanche_reboot": {
+        "provider": "steam",
+        "id": "3610993599"
+    },
+    "ze_ny_marathon_p": {
+        "provider": "steam",
+        "id": "3473782795"
+    },
+    "ze_oot_shadowtemple": {
+        "provider": "steam",
+        "id": "3596737015"
+    },
+    "ze_ocean_heart_cs2": {
+        "provider": "steam",
+        "id": "3242876423"
+    },
+    "ze_rush_a": {
+        "provider": "steam",
+        "id": "3207572850"
+    },
+    "ze_palace_of_minolila_cs2": {
+        "provider": "steam",
+        "id": "3316647362"
+    },
+    "ze_moltentemple": {
+        "provider": "steam",
+        "id": "3592588117"
     }
 }
