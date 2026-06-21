@@ -1,7 +1,5 @@
 import cron from 'node-cron';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../database/index'
 
 export const startCronJobs = () => {
   cron.schedule('*/1 * * * *', async () => {
