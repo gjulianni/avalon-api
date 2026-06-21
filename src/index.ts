@@ -9,6 +9,7 @@ import { Server } from 'socket.io';
 import mysql from 'mysql2/promise';
 import MySQLStoreFactory from 'express-mysql-session';
 import type {} from './types/session';
+import { prisma } from './database';
 
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 dns.setDefaultResultOrder('ipv4first');
@@ -157,3 +158,30 @@ server.listen(PORT, "0.0.0.0", async () => {
   startCronJobs();
   startQuestGenerator();
 });
+
+// ── Graceful Shutdown (Evita estourar o banco nos deploys) ──────────────
+
+const gracefulShutdown = async (signal: string) => {
+
+  server.close(async (err) => {
+    if (err) console.error('[SISTEMA] Erro ao fechar o servidor HTTP:', err);
+    else console.log('[SISTEMA] Servidor HTTP fechado. Nenhuma nova requisição será aceita.');
+
+    try {
+      await mysqlPool.end();
+      console.log('[SISTEMA] Conexões do Session Store (mysql2) encerradas.');
+
+      await prisma.$disconnect();
+      console.log('[SISTEMA] Conexões do Prisma encerradas com sucesso.');
+
+      console.log('[SISTEMA] Processo Node.js finalizado limpo.');
+      process.exit(0);
+    } catch (error) {
+      console.error('[SISTEMA] Erro crítico ao desconectar dos bancos:', error);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
