@@ -155,7 +155,7 @@ export const getOrderStatus = async (req: Request, res: Response) => {
         method: 'GET',
         headers: {
           ...webstoreHeaders(),
-          'Authorization': `Bearer ${process.env.CENTRALCART_API_TOKEN}`,
+          'Authorization': `Bearer ${process.env.CENTRALCART_API_KEY}`,
         },
       });
       const remoteOrder: any = await response.json();
@@ -260,7 +260,13 @@ export const checkout = async (
       console.log(`[DEBUG CHECKOUT] 2. ID do Pedido: ${raw.order_id} | Status Inicial: ${initialStatus}`);
       await prisma.order.upsert({
         where: { id: raw.order_id },
-        update: {},
+        update: {
+      status: raw.status || 'PENDING',
+      pixCode: raw.pix_code ?? null,
+      qrCode: raw.qr_code ?? null,
+      checkoutUrl: finalUrl ?? null,
+      price: raw.formatted_price ?? null,
+    },
         create: {
           id: raw.order_id,
           status: raw.status || 'PENDING',
